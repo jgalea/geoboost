@@ -42,10 +42,15 @@ final class ReferralTracker {
 	}
 
 	public function process( array $req ): void {
-		$source = $this->detect( (string) ( $req['referer'] ?? '' ), (string) ( $req['utm_source'] ?? '' ) );
+		$raw_referer = (string) ( $req['referer'] ?? '' );
+		$source      = $this->detect( $raw_referer, (string) ( $req['utm_source'] ?? '' ) );
 		if ( null === $source ) {
 			return;
 		}
+		$parsed  = parse_url( $raw_referer );
+		$referer = ( isset( $parsed['scheme'], $parsed['host'] ) )
+			? $parsed['scheme'] . '://' . $parsed['host']
+			: '';
 		$this->logger->log(
 			'ai_referral',
 			array(
@@ -53,7 +58,7 @@ final class ReferralTracker {
 				'path'          => (string) ( $req['path'] ?? '' ),
 				'status_code'   => 200,
 				'user_agent'    => '',
-				'referer'       => (string) ( $req['referer'] ?? '' ),
+				'referer'       => $referer,
 			)
 		);
 	}

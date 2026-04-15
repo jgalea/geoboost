@@ -33,6 +33,17 @@ final class ReferralTrackerTest extends TestCase {
 		$this->assertSame( 'perplexity', $rows[0]['bot_or_source'] );
 	}
 
+	public function test_referer_is_truncated_to_host(): void {
+		$rows = array();
+		$log  = new EventLogger( static function ( array $r ) use ( &$rows ): void { $rows[] = $r; } );
+		( new ReferralTracker( $log ) )->process( array(
+			'referer'    => 'https://chatgpt.com/c/abc123?utm_source=share&id=secret',
+			'path'       => '/hello',
+			'utm_source' => '',
+		) );
+		$this->assertSame( 'https://chatgpt.com', $rows[0]['referer'] );
+	}
+
 	public function test_ignores_google_referer(): void {
 		$rows = array();
 		$log  = new EventLogger( static function ( array $r ) use ( &$rows ): void {
