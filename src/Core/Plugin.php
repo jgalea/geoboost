@@ -28,6 +28,23 @@ final class Plugin {
 
 		( new \GeoBoost\Schema\Output( new \GeoBoost\SeoIntegration\Detector() ) )->register();
 
+		( new \GeoBoost\Blocks\FaqBlock() )->register();
+
+		add_filter(
+			'block_categories_all',
+			static function ( array $cats ): array {
+				array_unshift(
+					$cats,
+					array(
+						'slug'  => 'geoboost',
+						'title' => __( 'GEOBoost', 'geoboost' ),
+						'icon'  => 'admin-site-alt3',
+					)
+				);
+				return $cats;
+			}
+		);
+
 		if ( is_admin() ) {
 			( new \GeoBoost\Admin\SettingsPage() )->register();
 			( new \GeoBoost\Admin\MetaBoxes\CustomJsonLdBox() )->register();
