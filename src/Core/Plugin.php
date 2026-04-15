@@ -33,6 +33,11 @@ final class Plugin {
 		( new \GeoBoost\Blocks\KeyFactsBlock() )->register();
 		( new \GeoBoost\Blocks\Shortcodes() )->register();
 
+		$events = new \GeoBoost\Events\EventLogger();
+		( new \GeoBoost\Events\BotTracker( $events ) )->register();
+		( new \GeoBoost\Events\ReferralTracker( $events ) )->register();
+		( new \GeoBoost\Events\Pruner() )->register();
+
 		add_filter(
 			'block_categories_all',
 			static function ( array $cats ): array {
