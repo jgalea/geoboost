@@ -10,3 +10,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 if ( ! defined( 'ABSPATH' ) ) {
     define( 'ABSPATH', __DIR__ . '/fake-wp/' );
 }
+
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+    define( 'HOUR_IN_SECONDS', 3600 );
+}
