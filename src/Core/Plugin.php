@@ -31,6 +31,7 @@ final class Plugin {
 		( new \GeoBoost\Blocks\FaqBlock() )->register();
 		( new \GeoBoost\Blocks\SummaryBlock() )->register();
 		( new \GeoBoost\Blocks\KeyFactsBlock() )->register();
+		( new \GeoBoost\Blocks\Shortcodes() )->register();
 
 		add_filter(
 			'block_categories_all',
