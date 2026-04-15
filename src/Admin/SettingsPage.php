@@ -5,7 +5,7 @@ use GeoBoost\Robots\AiBotController;
 
 final class SettingsPage {
 
-	private const SLUG       = 'geoboost';
+	private const SLUG       = 'geoboost-settings';
 	private const OPTION_GRP = 'geoboost_options';
 
 	public function register(): void {
@@ -16,7 +16,7 @@ final class SettingsPage {
 
 	public function maybe_show_override_notice(): void {
 		$screen = get_current_screen();
-		if ( ! $screen || 'toplevel_page_geoboost' !== $screen->id ) {
+		if ( ! $screen || 'geoboost_page_geoboost-settings' !== $screen->id ) {
 			return;
 		}
 		$detector = new \GeoBoost\LlmsTxt\OverrideDetector();
@@ -40,14 +40,13 @@ final class SettingsPage {
 	}
 
 	public function add_menu(): void {
-		add_menu_page(
-			__( 'GEOBoost', 'geoboost' ),
-			__( 'GEOBoost', 'geoboost' ),
+		add_submenu_page(
+			'geoboost',
+			__( 'Settings', 'geoboost' ),
+			__( 'Settings', 'geoboost' ),
 			'manage_options',
 			self::SLUG,
-			array( $this, 'render' ),
-			'dashicons-admin-site-alt3',
-			81
+			array( $this, 'render' )
 		);
 	}
 
