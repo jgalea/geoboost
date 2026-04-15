@@ -16,11 +16,15 @@ final class BotTracker {
 	}
 
 	public function maybe_log_request(): void {
-		$this->process( array(
-			'ua'      => (string) ( $_SERVER['HTTP_USER_AGENT'] ?? '' ),
-			'path'    => (string) ( $_SERVER['REQUEST_URI'] ?? '' ),
-			'referer' => (string) ( $_SERVER['HTTP_REFERER'] ?? '' ),
-		) );
+		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		$this->process(
+			array(
+				'ua'      => isset( $_SERVER['HTTP_USER_AGENT'] ) ? (string) wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) : '',
+				'path'    => isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '',
+				'referer' => isset( $_SERVER['HTTP_REFERER'] ) ? (string) wp_unslash( $_SERVER['HTTP_REFERER'] ) : '',
+			)
+		);
+		// phpcs:enable
 	}
 
 	public function process( array $req ): void {
@@ -29,13 +33,16 @@ final class BotTracker {
 		if ( null === $match ) {
 			return;
 		}
-		$this->logger->log( 'bot_crawl', array(
-			'bot_or_source' => $match,
-			'path'          => (string) ( $req['path'] ?? '' ),
-			'status_code'   => 200,
-			'user_agent'    => $ua,
-			'referer'       => (string) ( $req['referer'] ?? '' ),
-		) );
+		$this->logger->log(
+			'bot_crawl',
+			array(
+				'bot_or_source' => $match,
+				'path'          => (string) ( $req['path'] ?? '' ),
+				'status_code'   => 200,
+				'user_agent'    => $ua,
+				'referer'       => (string) ( $req['referer'] ?? '' ),
+			)
+		);
 	}
 
 	private function match( string $ua ): ?string {

@@ -35,7 +35,7 @@ final class ScoreBox {
 		$grade   = $this->grade( $score );
 		printf(
 			'<p style="font-size:2em;margin:0.25em 0;"><strong>%d</strong> <span style="color:#50575e">/100 (%s)</span></p>',
-			$score,
+			(int) $score,
 			esc_html( $grade )
 		);
 		$recs = ( new Recommendations() )->for_signals( $details );
@@ -56,19 +56,19 @@ final class ScoreBox {
 		if ( 'publish' !== $post->post_status && 'draft' !== $post->post_status && 'private' !== $post->post_status ) {
 			return;
 		}
-		$author_id     = (int) $post->post_author;
-		$author_fields = array(
+		$author_id         = (int) $post->post_author;
+		$author_fields     = array(
 			'credentials' => (string) get_user_meta( $author_id, 'geoboost_credentials', true ),
 			'knowsAbout'  => (array) get_user_meta( $author_id, 'geoboost_expertise', true ),
 		);
-		$signals       = ( new ContentAnalyzer() )->analyze(
+		$signals           = ( new ContentAnalyzer() )->analyze(
 			array(
 				'title'              => $post->post_title,
 				'content_html'       => (string) apply_filters( 'the_content', $post->post_content ),
 				'excerpt'            => (string) $post->post_excerpt,
 				'author_fields'      => $author_fields,
 				'has_featured'       => has_post_thumbnail( $post_id ),
-				'has_article_schema' => true, // we emit it via Schema/Output unless SEO plugin does
+				'has_article_schema' => true, // We emit it via Schema/Output unless SEO plugin does.
 				'has_custom_jsonld'  => '' !== trim( (string) get_post_meta( $post_id, '_geoboost_custom_jsonld', true ) ),
 				'site_host'          => wp_parse_url( home_url(), PHP_URL_HOST ),
 			)

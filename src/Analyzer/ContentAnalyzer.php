@@ -31,7 +31,7 @@ final class ContentAnalyzer {
 
 	private function headings_ok( string $html ): bool {
 		if ( ! preg_match_all( '/<h([1-6])/i', $html, $m ) ) {
-			return true; // no headings is technically fine
+			return true; // No headings is technically fine.
 		}
 		$levels = array_map( 'intval', $m[1] );
 		$prev   = 0;

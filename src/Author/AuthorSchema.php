@@ -15,7 +15,7 @@ final class AuthorSchema {
 			array(
 				'name'        => (string) get_the_author_meta( 'display_name', $user_id ),
 				'url'         => (string) get_author_posts_url( $user_id ),
-				'description' => $credentials ?: (string) get_the_author_meta( 'description', $user_id ),
+				'description' => '' !== $credentials ? $credentials : (string) get_the_author_meta( 'description', $user_id ),
 				'jobTitle'    => $job_title,
 				'knowsAbout'  => $expertise,
 				'sameAs'      => $same_as,

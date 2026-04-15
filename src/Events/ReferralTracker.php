@@ -30,11 +30,15 @@ final class ReferralTracker {
 	}
 
 	public function maybe_log_request(): void {
-		$this->process( array(
-			'referer'    => (string) ( $_SERVER['HTTP_REFERER'] ?? '' ),
-			'path'       => (string) ( $_SERVER['REQUEST_URI'] ?? '' ),
-			'utm_source' => (string) ( $_GET['utm_source'] ?? '' ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		) );
+		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.NonceVerification.Recommended
+		$this->process(
+			array(
+				'referer'    => isset( $_SERVER['HTTP_REFERER'] ) ? (string) wp_unslash( $_SERVER['HTTP_REFERER'] ) : '',
+				'path'       => isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '',
+				'utm_source' => isset( $_GET['utm_source'] ) ? (string) wp_unslash( $_GET['utm_source'] ) : '',
+			)
+		);
+		// phpcs:enable
 	}
 
 	public function process( array $req ): void {
@@ -42,13 +46,16 @@ final class ReferralTracker {
 		if ( null === $source ) {
 			return;
 		}
-		$this->logger->log( 'ai_referral', array(
-			'bot_or_source' => $source,
-			'path'          => (string) ( $req['path'] ?? '' ),
-			'status_code'   => 200,
-			'user_agent'    => '',
-			'referer'       => (string) ( $req['referer'] ?? '' ),
-		) );
+		$this->logger->log(
+			'ai_referral',
+			array(
+				'bot_or_source' => $source,
+				'path'          => (string) ( $req['path'] ?? '' ),
+				'status_code'   => 200,
+				'user_agent'    => '',
+				'referer'       => (string) ( $req['referer'] ?? '' ),
+			)
+		);
 	}
 
 	private function detect( string $referer, string $utm ): ?string {

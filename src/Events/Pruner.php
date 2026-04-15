@@ -25,9 +25,13 @@ final class Pruner {
 	public function prune(): void {
 		global $wpdb;
 		$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( 90 * DAY_IN_SECONDS ) );
-		$wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			'DELETE FROM ' . EventsTable::name() . ' WHERE created_at < %s',
-			$cutoff
-		) );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query(
+			$wpdb->prepare(
+				'DELETE FROM ' . EventsTable::name() . ' WHERE created_at < %s',
+				$cutoff
+			)
+		);
+		// phpcs:enable
 	}
 }

@@ -116,12 +116,17 @@ final class Endpoint {
 		}
 
 		$authors = array();
-		foreach ( get_users( array( 'who' => 'authors', 'number' => 20 ) ) as $u ) {
+		foreach ( get_users(
+			array(
+				'who'    => 'authors',
+				'number' => 20,
+			)
+		) as $u ) {
 			$credentials = (string) get_user_meta( $u->ID, 'geoboost_credentials', true );
 			$authors[]   = array(
 				'name' => (string) $u->display_name,
 				'url'  => (string) get_author_posts_url( $u->ID ),
-				'bio'  => $credentials ?: (string) get_user_meta( $u->ID, 'description', true ),
+				'bio'  => '' !== $credentials ? $credentials : (string) get_user_meta( $u->ID, 'description', true ),
 			);
 		}
 

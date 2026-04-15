@@ -33,7 +33,7 @@ final class ScoreWidget {
 		$out  = '<h2>' . esc_html__( 'Score distribution', 'geoboost' ) . '</h2>';
 		$out .= SvgChart::bar_chart( $bins );
 
-		$top = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$top  = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			"SELECT p.ID, p.post_title, CAST(pm.meta_value AS UNSIGNED) AS s
 			FROM {$wpdb->posts} p
 			INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_geoboost_score'

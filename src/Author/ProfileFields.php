@@ -60,8 +60,9 @@ final class ProfileFields {
 		}
 		update_user_meta( $user_id, 'geoboost_job_title', sanitize_text_field( wp_unslash( $_POST['geoboost_job_title'] ?? '' ) ) );
 		update_user_meta( $user_id, 'geoboost_credentials', sanitize_textarea_field( wp_unslash( $_POST['geoboost_credentials'] ?? '' ) ) );
-		update_user_meta( $user_id, 'geoboost_expertise', $this->sanitize_expertise( (string) wp_unslash( $_POST['geoboost_expertise'] ?? '' ) ) );
-		$urls_raw = preg_split( '/\r?\n/', (string) wp_unslash( $_POST['geoboost_sameas'] ?? '' ) );
+		// Sanitized by sanitize_expertise / sanitize_urls below.
+		update_user_meta( $user_id, 'geoboost_expertise', $this->sanitize_expertise( (string) wp_unslash( $_POST['geoboost_expertise'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$urls_raw = preg_split( '/\r?\n/', (string) wp_unslash( $_POST['geoboost_sameas'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		update_user_meta( $user_id, 'geoboost_sameas', $this->sanitize_urls( $urls_raw ) );
 	}
 

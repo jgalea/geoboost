@@ -33,7 +33,10 @@ final class Scorer {
 		if ( is_array( $last ) && (int) ( $last['score'] ?? -1 ) === $score ) {
 			return $history;
 		}
-		$history[] = array( 'ts' => $ts, 'score' => $score );
+		$history[] = array(
+			'ts'    => $ts,
+			'score' => $score,
+		);
 		if ( count( $history ) > 52 ) {
 			$history = array_slice( $history, -52 );
 		}

@@ -49,7 +49,7 @@ final class CustomJsonLdBox {
 			return;
 		}
 		// JSON-LD must retain quotes/braces; sanitize_textarea_field would break it. We validate as JSON below.
-		$raw = isset( $_POST['geoboost_custom_jsonld'] ) ? wp_unslash( $_POST['geoboost_custom_jsonld'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw    = isset( $_POST['geoboost_custom_jsonld'] ) ? wp_unslash( $_POST['geoboost_custom_jsonld'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$result = ( new CustomJsonLd() )->validate( (string) $raw );
 		if ( ! $result['ok'] ) {
 			set_transient( 'geoboost_jsonld_error_' . get_current_user_id(), $result['error'], 60 );
