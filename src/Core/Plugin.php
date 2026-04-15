@@ -29,6 +29,7 @@ final class Plugin {
 		( new \GeoBoost\Schema\Output( new \GeoBoost\SeoIntegration\Detector() ) )->register();
 
 		( new \GeoBoost\Blocks\FaqBlock() )->register();
+		( new \GeoBoost\Blocks\SummaryBlock() )->register();
 
 		add_filter(
 			'block_categories_all',

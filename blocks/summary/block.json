@@ -1,0 +1,18 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "geoboost/summary",
+	"title": "GEOBoost Summary",
+	"category": "geoboost",
+	"icon": "excerpt-view",
+	"description": "Short TL;DR block — gives LLMs a fact-dense summary to cite.",
+	"attributes": {
+		"style": { "type": "string", "default": "bulleted" },
+		"points": { "type": "array", "default": [ "" ] },
+		"paragraph": { "type": "string", "default": "" }
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php",
+	"supports": { "html": false }
+}
