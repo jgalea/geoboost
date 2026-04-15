@@ -55,15 +55,24 @@ final class Endpoint {
 	}
 
 	private function generate(): string {
-		$site = array(
+		$description_override = (string) get_option( 'geoboost_description', '' );
+		$site                 = array(
 			'site_title'  => get_bloginfo( 'name' ),
 			'tagline'     => get_bloginfo( 'description' ),
-			'description' => (string) apply_filters( 'geoboost_llms_description', get_bloginfo( 'description' ) ),
+			'description' => '' !== $description_override ? $description_override : '',
 			'home_url'    => home_url( '/' ),
 		);
 
+		$post_types = array();
+		if ( get_option( 'geoboost_include_posts', true ) ) {
+			$post_types[] = 'post';
+		}
+		if ( get_option( 'geoboost_include_pages', true ) ) {
+			$post_types[] = 'page';
+		}
+
 		$query_args = array(
-			'post_type'      => array( 'post', 'page' ),
+			'post_type'      => $post_types ? $post_types : array( 'post' ),
 			'post_status'    => 'publish',
 			'posts_per_page' => 50,
 			'orderby'        => 'date',

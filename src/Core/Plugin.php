@@ -23,5 +23,9 @@ final class Plugin {
 		) )->register();
 
 		( new \GeoBoost\Robots\AiBotController( $settings ) )->register();
+
+		if ( is_admin() ) {
+			( new \GeoBoost\Admin\SettingsPage() )->register();
+		}
 	}
 }
