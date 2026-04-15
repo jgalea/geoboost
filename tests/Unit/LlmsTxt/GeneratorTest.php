@@ -9,16 +9,16 @@ final class GeneratorTest extends TestCase {
     public function test_build_renders_site_header(): void {
         $out = ( new Generator() )->build(
             [
-                'site_title'   => 'Jean Galea',
-                'tagline'      => 'Entrepreneur & Polymath',
+                'site_title'   => 'Example Site',
+                'tagline'      => 'A tagline for the site',
                 'description'  => 'Long-form writing on business, tech, and life.',
-                'home_url'     => 'https://jeangalea.com',
+                'home_url'     => 'https://example.com',
             ],
             []
         );
 
-        $this->assertStringContainsString( '# Jean Galea', $out );
-        $this->assertStringContainsString( '> Entrepreneur & Polymath', $out );
+        $this->assertStringContainsString( '# Example Site', $out );
+        $this->assertStringContainsString( '> A tagline for the site', $out );
         $this->assertStringContainsString( 'Long-form writing on business, tech, and life.', $out );
     }
 

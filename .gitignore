@@ -4,3 +4,6 @@
 .phpunit.result.cache
 .DS_Store
 *.log
+/docs/
+.phpunit.result.cache
+/.claude/

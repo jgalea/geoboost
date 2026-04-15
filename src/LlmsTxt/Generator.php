@@ -27,8 +27,10 @@ final class Generator {
 			$lines[] = '## Posts';
 			$lines[] = '';
 			foreach ( $posts as $post ) {
+				$title   = $this->flatten_whitespace( str_replace( array( '[', ']' ), ' ', $post['title'] ) );
+				$url     = $this->sanitize_url( $post['url'] );
 				$excerpt = $this->flatten_whitespace( $post['excerpt'] );
-				$entry   = sprintf( '- [%s](%s)', $post['title'], $post['url'] );
+				$entry   = sprintf( '- [%s](%s)', $title, $url );
 				if ( '' !== $excerpt ) {
 					$entry .= ': ' . $excerpt;
 				}
@@ -42,5 +44,12 @@ final class Generator {
 
 	private function flatten_whitespace( string $text ): string {
 		return trim( preg_replace( '/\s+/', ' ', $text ) );
+	}
+
+	private function sanitize_url( string $url ): string {
+		if ( function_exists( 'esc_url_raw' ) ) {
+			return esc_url_raw( $url );
+		}
+		return trim( str_replace( array( ' ', '"', '<', '>', '`', "\n", "\r", "\t" ), '', $url ) );
 	}
 }
