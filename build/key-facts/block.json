@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "geoboost/key-facts",
+  "title": "GEOBoost Key Facts",
+  "category": "geoboost",
+  "icon": "list-view",
+  "description": "Structured key/value facts. Renders as a definition list with schema.org markup.",
+  "attributes": {
+    "facts": {
+      "type": "array",
+      "default": [
+        {
+          "k": "",
+          "v": ""
+        }
+      ]
+    }
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php",
+  "supports": {
+    "html": false
+  }
+}
