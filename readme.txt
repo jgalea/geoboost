@@ -52,3 +52,7 @@ No. Google's regular crawler (Googlebot) is separate from Google-Extended (Gemin
 * llms.txt generator and endpoint
 * AI bot allow/block controls via robots.txt
 * Admin settings page
+
+== Accessibility ==
+
+GEOBoost aims for WCAG 2.1 AA in admin and frontend output. Charts on the dashboard include role="img" and aria-labels; FAQs use native <details>/<summary>; all admin controls are keyboard navigable.
