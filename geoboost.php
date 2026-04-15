@@ -19,3 +19,7 @@ define( 'GEOBOOST_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GEOBOOST_URL', plugin_dir_url( __FILE__ ) );
 
 require_once __DIR__ . '/vendor/autoload.php';
+
+add_action( 'plugins_loaded', static function (): void {
+    \GeoBoost\Core\Plugin::instance()->boot();
+} );
