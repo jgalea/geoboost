@@ -26,6 +26,8 @@ final class Plugin {
 
 		( new \GeoBoost\Robots\AiBotController( $settings ) )->register();
 
+		( new \GeoBoost\Schema\Output( new \GeoBoost\SeoIntegration\Detector() ) )->register();
+
 		if ( is_admin() ) {
 			( new \GeoBoost\Admin\SettingsPage() )->register();
 		}
