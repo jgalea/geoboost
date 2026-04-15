@@ -30,6 +30,7 @@ final class Plugin {
 
 		if ( is_admin() ) {
 			( new \GeoBoost\Admin\SettingsPage() )->register();
+			( new \GeoBoost\Admin\MetaBoxes\CustomJsonLdBox() )->register();
 		}
 	}
 }
