@@ -7,7 +7,7 @@ final class Generator {
 	 * @param array{site_title:string,tagline:string,description:string,home_url:string} $site
 	 * @param array<int,array{title:string,url:string,excerpt:string}>                   $posts
 	 */
-	public function build( array $site, array $posts ): string {
+	public function build( array $site, array $posts, array $extras = array() ): string {
 		$lines = array();
 
 		$lines[] = '# ' . $site['site_title'];
@@ -17,9 +17,24 @@ final class Generator {
 			$lines[] = '> ' . $site['tagline'];
 			$lines[] = '';
 		}
-
 		if ( ! empty( $site['description'] ) ) {
 			$lines[] = $site['description'];
+			$lines[] = '';
+		}
+
+		if ( ! empty( $extras['key_pages'] ) ) {
+			$lines[] = '## Key Pages';
+			$lines[] = '';
+			foreach ( $extras['key_pages'] as $p ) {
+				$title   = $this->flatten_whitespace( str_replace( array( '[', ']' ), ' ', $p['title'] ) );
+				$url     = $this->sanitize_url( $p['url'] );
+				$summary = $this->flatten_whitespace( (string) ( $p['summary'] ?? '' ) );
+				$entry   = sprintf( '- [%s](%s)', $title, $url );
+				if ( '' !== $summary ) {
+					$entry .= ': ' . $summary;
+				}
+				$lines[] = $entry;
+			}
 			$lines[] = '';
 		}
 
@@ -33,6 +48,22 @@ final class Generator {
 				$entry   = sprintf( '- [%s](%s)', $title, $url );
 				if ( '' !== $excerpt ) {
 					$entry .= ': ' . $excerpt;
+				}
+				$lines[] = $entry;
+			}
+			$lines[] = '';
+		}
+
+		if ( ! empty( $extras['authors'] ) ) {
+			$lines[] = '## Authors';
+			$lines[] = '';
+			foreach ( $extras['authors'] as $a ) {
+				$name  = $this->flatten_whitespace( $a['name'] );
+				$url   = $this->sanitize_url( $a['url'] );
+				$bio   = $this->flatten_whitespace( (string) ( $a['bio'] ?? '' ) );
+				$entry = sprintf( '- [%s](%s)', $name, $url );
+				if ( '' !== $bio ) {
+					$entry .= ': ' . $bio;
 				}
 				$lines[] = $entry;
 			}

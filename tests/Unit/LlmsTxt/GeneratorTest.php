@@ -57,4 +57,32 @@ final class GeneratorTest extends TestCase {
         $this->assertStringNotContainsString( "line1\nline2", $out );
         $this->assertStringContainsString( 'line1 line2', $out );
     }
+
+    public function test_build_renders_key_pages_section(): void {
+        $out = ( new Generator() )->build(
+            array( 'site_title' => 'S', 'tagline' => '', 'description' => '', 'home_url' => 'https://x.test' ),
+            array(),
+            array(
+                'key_pages' => array(
+                    array( 'title' => 'Guide', 'url' => 'https://x.test/guide', 'summary' => 'A guide.' ),
+                ),
+            )
+        );
+        $this->assertStringContainsString( '## Key Pages', $out );
+        $this->assertStringContainsString( '[Guide](https://x.test/guide)', $out );
+    }
+
+    public function test_build_renders_authors_section(): void {
+        $out = ( new Generator() )->build(
+            array( 'site_title' => 'S', 'tagline' => '', 'description' => '', 'home_url' => 'https://x.test' ),
+            array(),
+            array(
+                'authors' => array(
+                    array( 'name' => 'Jane', 'url' => 'https://x.test/a/jane', 'bio' => 'Editor' ),
+                ),
+            )
+        );
+        $this->assertStringContainsString( '## Authors', $out );
+        $this->assertStringContainsString( '[Jane]', $out );
+    }
 }

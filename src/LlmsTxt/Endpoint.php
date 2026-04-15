@@ -91,9 +91,56 @@ final class Endpoint {
 			);
 		}
 
-		$posts = (array) apply_filters( 'geoboost_llms_posts', $posts );
+		$key_pages = array();
+		if ( function_exists( 'get_posts' ) ) {
+			$top_posts = get_posts(
+				array(
+					'post_type'      => 'post',
+					'posts_per_page' => 10,
+					'meta_key'       => '_geoboost_score', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+					'orderby'        => 'meta_value_num',
+					'order'          => 'DESC',
+				)
+			);
+			foreach ( $top_posts as $p ) {
+				$summary = (string) get_post_meta( $p->ID, '_geoboost_llmstxt_summary', true );
+				if ( '' === $summary ) {
+					$summary = (string) get_the_excerpt( $p );
+				}
+				$key_pages[] = array(
+					'title'   => get_the_title( $p ),
+					'url'     => (string) get_permalink( $p ),
+					'summary' => wp_strip_all_tags( $summary ),
+				);
+			}
+		}
 
-		return $this->generator->build( $site, $posts );
+		$authors = array();
+		foreach ( get_users( array( 'who' => 'authors', 'number' => 20 ) ) as $u ) {
+			$credentials = (string) get_user_meta( $u->ID, 'geoboost_credentials', true );
+			$authors[]   = array(
+				'name' => (string) $u->display_name,
+				'url'  => (string) get_author_posts_url( $u->ID ),
+				'bio'  => $credentials ?: (string) get_user_meta( $u->ID, 'description', true ),
+			);
+		}
+
+		$extras = array(
+			'key_pages' => $key_pages,
+			'authors'   => $authors,
+		);
+
+		$posts_filtered = array();
+		foreach ( $posts as $p ) {
+			$post_id  = function_exists( 'url_to_postid' ) ? url_to_postid( $p['url'] ) : 0;
+			$excluded = '1' === (string) get_post_meta( $post_id, '_geoboost_llmstxt_exclude', true );
+			if ( ! $excluded ) {
+				$posts_filtered[] = $p;
+			}
+		}
+		$posts = (array) apply_filters( 'geoboost_llms_posts', $posts_filtered );
+
+		return $this->generator->build( $site, $posts, $extras );
 	}
 
 	private function excerpt( \WP_Post $post ): string {
