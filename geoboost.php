@@ -23,3 +23,6 @@ require_once __DIR__ . '/vendor/autoload.php';
 add_action( 'plugins_loaded', static function (): void {
     \GeoBoost\Core\Plugin::instance()->boot();
 } );
+
+register_activation_hook( __FILE__, [ \GeoBoost\Core\Activator::class, 'activate' ] );
+register_deactivation_hook( __FILE__, [ \GeoBoost\Core\Deactivator::class, 'deactivate' ] );
