@@ -91,6 +91,12 @@ final class ProfileFields {
 			if ( ! preg_match( '#^https?://#i', $url ) ) {
 				continue;
 			}
+			if ( function_exists( 'esc_url_raw' ) ) {
+				$url = esc_url_raw( $url );
+				if ( '' === $url ) {
+					continue;
+				}
+			}
 			$out[] = $url;
 		}
 		return $out;
