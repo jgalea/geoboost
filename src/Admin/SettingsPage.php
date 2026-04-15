@@ -11,6 +11,32 @@ final class SettingsPage {
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'admin_notices', array( $this, 'maybe_show_override_notice' ) );
+	}
+
+	public function maybe_show_override_notice(): void {
+		$screen = get_current_screen();
+		if ( ! $screen || 'toplevel_page_geoboost' !== $screen->id ) {
+			return;
+		}
+		$detector = new \GeoBoost\LlmsTxt\OverrideDetector();
+		if ( ! $detector->check_cached( home_url( '/llms.txt' ) ) ) {
+			return;
+		}
+		?>
+		<div class="notice notice-warning">
+			<p>
+				<strong><?php esc_html_e( 'GEOBoost: /llms.txt is being overridden', 'geoboost' ); ?></strong><br>
+				<?php
+				printf(
+					/* translators: %s: URL */
+					esc_html__( 'Another source is serving %s before GEOBoost can. This usually means a static file exists at your web root or another plugin is handling the URL. Remove or rename that source so GEOBoost can serve its auto-generated llms.txt.', 'geoboost' ),
+					'<code>' . esc_html( home_url( '/llms.txt' ) ) . '</code>'
+				);
+				?>
+			</p>
+		</div>
+		<?php
 	}
 
 	public function add_menu(): void {
