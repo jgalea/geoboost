@@ -118,6 +118,55 @@ final class SettingsPage {
 			self::SLUG,
 			'main'
 		);
+
+		foreach ( array( 'article', 'person', 'organization', 'website' ) as $type ) {
+			register_setting(
+				self::OPTION_GRP,
+				'geoboost_schema_mode_' . $type,
+				array(
+					'type'              => 'string',
+					'sanitize_callback' => static function ( $v ): string {
+						return in_array( $v, array( 'auto', 'force', 'off' ), true ) ? $v : 'auto';
+					},
+					'default'           => 'auto',
+				)
+			);
+		}
+
+		add_settings_section(
+			'schema',
+			__( 'Schema output', 'geoboost' ),
+			static function (): void {
+				echo '<p>' . esc_html__( 'Control whether GEOBoost outputs each schema type. Auto = skip if your SEO plugin already emits it.', 'geoboost' ) . '</p>';
+			},
+			self::SLUG
+		);
+
+		foreach ( array(
+			'article'      => __( 'Article', 'geoboost' ),
+			'person'       => __( 'Person (author archives)', 'geoboost' ),
+			'organization' => __( 'Organization (front page)', 'geoboost' ),
+			'website'      => __( 'WebSite + SearchAction (front page)', 'geoboost' ),
+		) as $key => $label ) {
+			add_settings_field(
+				'geoboost_schema_mode_' . $key,
+				$label,
+				function () use ( $key ): void {
+					$v = (string) get_option( 'geoboost_schema_mode_' . $key, 'auto' );
+					foreach ( array( 'auto', 'force', 'off' ) as $opt ) {
+						printf(
+							'<label style="margin-right:1em"><input type="radio" name="geoboost_schema_mode_%1$s" value="%2$s" %3$s /> %4$s</label>',
+							esc_attr( $key ),
+							esc_attr( $opt ),
+							checked( $v, $opt, false ),
+							esc_html( ucfirst( $opt ) )
+						);
+					}
+				},
+				self::SLUG,
+				'schema'
+			);
+		}
 	}
 
 	/**
