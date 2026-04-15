@@ -52,6 +52,7 @@ final class Plugin {
 			( new \GeoBoost\Admin\SettingsPage() )->register();
 			( new \GeoBoost\Admin\MetaBoxes\CustomJsonLdBox() )->register();
 			( new \GeoBoost\Admin\MetaBoxes\ScoreBox() )->register();
+			( new \GeoBoost\Author\ProfileFields() )->register();
 		}
 	}
 }
