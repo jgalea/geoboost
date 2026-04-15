@@ -4,7 +4,7 @@ Tags: seo, ai, llm, chatgpt, schema, llms.txt
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,6 +31,14 @@ More features are on the way: structured data optimized for LLMs, Gutenberg bloc
 3. Visit Settings → GEOBoost to configure.
 4. Your `llms.txt` is served at `your-site.com/llms.txt` immediately.
 
+Installing from the GitHub repository (for developers):
+
+1. Clone the repo into wp-content/plugins/geoboost
+2. Run: composer install --no-dev --optimize-autoloader
+3. Activate via the WP admin.
+
+The WordPress.org zip bundles the autoloader, so this step only applies to git checkouts.
+
 == Frequently Asked Questions ==
 
 = Does this replace my SEO plugin? =
@@ -46,6 +54,12 @@ An emerging proposal (llmstxt.org) for a file that tells LLM-powered tools what 
 No. Google's regular crawler (Googlebot) is separate from Google-Extended (Gemini training). Blocking Google-Extended does not affect Google Search.
 
 == Changelog ==
+
+= 0.2.1 =
+* Security hardening: referer URLs are now truncated to scheme+host before logging.
+* Security hardening: dashboard page now requires manage_options capability.
+* Security hardening: stricter URL sanitization on author profile fields.
+* Docs: added developer install instructions to readme.
 
 = 0.2.0 =
 * JSON-LD schema output (Article, Person, Organization, WebSite) with SEO plugin conflict avoidance (Yoast, Rank Math, AIOSEO, SeoPress, SureRank).
