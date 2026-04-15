@@ -4,7 +4,7 @@ Tags: seo, ai, llm, chatgpt, schema, llms.txt
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,6 +46,19 @@ An emerging proposal (llmstxt.org) for a file that tells LLM-powered tools what 
 No. Google's regular crawler (Googlebot) is separate from Google-Extended (Gemini training). Blocking Google-Extended does not affect Google Search.
 
 == Changelog ==
+
+= 0.2.0 =
+* JSON-LD schema output (Article, Person, Organization, WebSite) with SEO plugin conflict avoidance (Yoast, Rank Math, AIOSEO, SeoPress, SureRank).
+* Per-post Custom JSON-LD meta box.
+* Three Gutenberg blocks: FAQ (with FAQPage schema), Summary (TL;DR), Key Facts.
+* Shortcode fallbacks for classic editor.
+* Content Analyzer and per-post GEO Score (0-100) with history.
+* Author E-E-A-T profile fields + Person schema on author archives.
+* AI bot crawl log + AI referral tracking in new geoboost_events table.
+* Dashboard with score distribution, top/bottom posts, bot activity, referral activity, and aggregated recommendations.
+* llms.txt enhancements: Key Pages (from top-scoring posts), Authors section, per-post override.
+* Admin notice if an external /llms.txt overrides our endpoint.
+* WCAG 2.1 AA accessibility improvements.
 
 = 0.1.0 =
 * Initial release
