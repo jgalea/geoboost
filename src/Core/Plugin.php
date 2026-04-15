@@ -15,9 +15,13 @@ final class Plugin {
 	}
 
 	public function boot(): void {
+		$settings = new \GeoBoost\Core\Settings();
+
 		( new \GeoBoost\LlmsTxt\Endpoint(
 			new \GeoBoost\LlmsTxt\Generator(),
 			new \GeoBoost\LlmsTxt\Cache()
 		) )->register();
+
+		( new \GeoBoost\Robots\AiBotController( $settings ) )->register();
 	}
 }
