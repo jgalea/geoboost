@@ -11,3 +11,7 @@ $wpdb->query(
 );
 
 delete_transient( 'geoboost_llms_txt' );
+
+require_once __DIR__ . '/vendor/autoload.php';
+\GeoBoost\Events\EventsTable::drop();
+delete_option( 'geoboost_db_version' );

@@ -15,6 +15,8 @@ final class Plugin {
 	}
 
 	public function boot(): void {
+		\GeoBoost\Core\Migrations::run();
+
 		$settings = new \GeoBoost\Core\Settings();
 
 		( new \GeoBoost\LlmsTxt\Endpoint(
