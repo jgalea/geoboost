@@ -13,7 +13,7 @@ final class Page {
 		add_menu_page(
 			__( 'GEOBoost', 'geoboost' ),
 			__( 'GEOBoost', 'geoboost' ),
-			'edit_posts',
+			'manage_options',
 			self::SLUG,
 			array( $this, 'render' ),
 			'dashicons-admin-site-alt3',
@@ -23,14 +23,14 @@ final class Page {
 			self::SLUG,
 			__( 'Dashboard', 'geoboost' ),
 			__( 'Dashboard', 'geoboost' ),
-			'edit_posts',
+			'manage_options',
 			self::SLUG,
 			array( $this, 'render' )
 		);
 	}
 
 	public function render(): void {
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 		echo '<div class="wrap geoboost-dashboard"><h1>' . esc_html__( 'GEOBoost Dashboard', 'geoboost' ) . '</h1>';
