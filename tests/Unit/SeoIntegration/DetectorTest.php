@@ -16,6 +16,11 @@ final class DetectorTest extends TestCase {
 		$this->assertContains( 'yoast', $d->active() );
 	}
 
+	public function test_active_returns_tsf(): void {
+		$d = new Detector( array( 'tsf' => true ) );
+		$this->assertContains( 'tsf', $d->active() );
+	}
+
 	public function test_emits_type_parses_jsonld_blocks(): void {
 		$d    = new Detector( array() );
 		$html = '<head><script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"X"}</script></head>';

@@ -9,6 +9,7 @@ final class Detector {
 		'aioseo'   => array( 'AIOSEO\\Plugin\\AIOSEO' ),
 		'seopress' => array( 'SEOPRESS_VERSION_NUM' ),
 		'surerank' => array( 'SureRank\\Inc\\Plugin_Loader' ),
+		'tsf'      => array( 'THE_SEO_FRAMEWORK_VERSION', 'The_SEO_Framework\\Load' ),
 	);
 
 	/** @var array<string,bool> Override for tests. */
