@@ -35,9 +35,15 @@ final class Page {
 			return;
 		}
 		wp_enqueue_style(
+			'geoboost-admin',
+			GEOBOOST_URL . 'assets/admin/admin.css',
+			array(),
+			GEOBOOST_VERSION
+		);
+		wp_enqueue_style(
 			'geoboost-dashboard',
 			GEOBOOST_URL . 'assets/admin/dashboard.css',
-			array(),
+			array( 'geoboost-admin' ),
 			GEOBOOST_VERSION
 		);
 	}

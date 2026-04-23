@@ -45,3 +45,45 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
         return json_encode( $data, $flags, $depth );
     }
 }
+
+if ( ! function_exists( '__' ) ) {
+    function __( string $text, string $domain = 'default' ): string {
+        return $text;
+    }
+}
+
+if ( ! function_exists( '_n' ) ) {
+    function _n( string $single, string $plural, int $number, string $domain = 'default' ): string {
+        return 1 === $number ? $single : $plural;
+    }
+}
+
+if ( ! function_exists( 'esc_html' ) ) {
+    function esc_html( string $text ): string {
+        return htmlspecialchars( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+    }
+}
+
+if ( ! function_exists( 'esc_attr' ) ) {
+    function esc_attr( string $text ): string {
+        return htmlspecialchars( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+    }
+}
+
+if ( ! function_exists( 'esc_html__' ) ) {
+    function esc_html__( string $text, string $domain = 'default' ): string {
+        return esc_html( $text );
+    }
+}
+
+if ( ! function_exists( 'esc_attr__' ) ) {
+    function esc_attr__( string $text, string $domain = 'default' ): string {
+        return esc_attr( $text );
+    }
+}
+
+if ( ! function_exists( 'number_format_i18n' ) ) {
+    function number_format_i18n( $number, int $decimals = 0 ): string {
+        return number_format( (float) $number, $decimals );
+    }
+}

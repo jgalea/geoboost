@@ -2,6 +2,8 @@
 namespace GeoBoost\Admin\Dashboard;
 
 use GeoBoost\Events\EventsTable;
+use GeoBoost\LlmsTxt\OverrideDetector;
+use GeoBoost\SeoIntegration\Detector;
 
 final class DataProvider {
 
@@ -21,6 +23,7 @@ final class DataProvider {
 			'sparkline'       => $this->sparkline( 'bot_crawl' ),
 			'top_posts'       => $this->top_posts(),
 			'recommendations' => $this->recommendations(),
+			'health'          => $this->health(),
 			'generated_at'    => time(),
 		);
 		set_transient( self::CACHE_KEY, $data, self::CACHE_TTL );
@@ -150,22 +153,44 @@ final class DataProvider {
 	private function top_posts(): array {
 		global $wpdb;
 		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			"SELECT p.ID, p.post_title, CAST(pm.meta_value AS UNSIGNED) AS score
+			"SELECT p.ID, p.post_title, CAST(pm.meta_value AS UNSIGNED) AS score, hm.meta_value AS history
 			FROM {$wpdb->posts} p
 			INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_geoboost_score'
+			LEFT JOIN {$wpdb->postmeta} hm ON hm.post_id = p.ID AND hm.meta_key = '_geoboost_score_history'
 			WHERE p.post_status = 'publish' AND p.post_type IN ('post','page')
 			ORDER BY score DESC LIMIT 10"
 		);
 		$out  = array();
 		foreach ( (array) $rows as $r ) {
+			$scanned = 0;
+			if ( ! empty( $r->history ) ) {
+				$hist = maybe_unserialize( $r->history );
+				if ( is_array( $hist ) && ! empty( $hist ) ) {
+					$last    = end( $hist );
+					$scanned = is_array( $last ) ? (int) ( $last['ts'] ?? 0 ) : 0;
+				}
+			}
 			$out[] = array(
-				'id'    => (int) $r->ID,
-				'title' => (string) $r->post_title,
-				'score' => (int) $r->score,
-				'edit'  => (string) get_edit_post_link( (int) $r->ID ),
+				'id'      => (int) $r->ID,
+				'title'   => (string) $r->post_title,
+				'score'   => (int) $r->score,
+				'edit'    => (string) get_edit_post_link( (int) $r->ID ),
+				'scanned' => $scanned,
 			);
 		}
 		return $out;
+	}
+
+	private function health(): array {
+		$detector = new Detector();
+		$seo      = $detector->active();
+		$bots     = (array) get_option( 'geoboost_blocked_ai_bots', array() );
+		$override = ( new OverrideDetector() )->check_cached( home_url( '/llms.txt' ) );
+		return array(
+			'seo_plugins'  => $seo,
+			'bots_blocked' => count( array_filter( array_map( 'strval', $bots ) ) ),
+			'llms_ok'      => ! $override,
+		);
 	}
 
 	private function recommendations(): array {

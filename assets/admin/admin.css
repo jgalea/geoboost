@@ -1,0 +1,215 @@
+/* GEOBoost — shared admin design tokens and primitives */
+
+.geoboost-admin {
+	--gb-bg: #ffffff;
+	--gb-bg-subtle: #f6f7f9;
+	--gb-border: #e1e4e8;
+	--gb-border-strong: #d0d7de;
+	--gb-text: #1a1f26;
+	--gb-text-muted: #5a6470;
+	--gb-text-subtle: #8a94a0;
+	--gb-primary: #2271b1;
+	--gb-primary-strong: #135e96;
+	--gb-poor: #d63638;
+	--gb-fair: #dba617;
+	--gb-good: #68b767;
+	--gb-excellent: #00a32a;
+	--gb-up: #068a47;
+	--gb-down: #b32d2e;
+	--gb-radius: 8px;
+	--gb-radius-sm: 4px;
+	--gb-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	--gb-shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.06);
+
+	margin: 16px 20px 40px 0;
+	color: var(--gb-text);
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.geoboost-admin * {
+	box-sizing: border-box;
+}
+
+/* Header */
+
+.geoboost-header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 20px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid var(--gb-border);
+}
+
+.geoboost-header h1 {
+	margin: 0;
+	font-size: 22px;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	color: var(--gb-text);
+}
+
+.geoboost-header__meta {
+	font-size: 12px;
+	color: var(--gb-text-subtle);
+}
+
+/* Card primitive */
+
+.geoboost-card {
+	background: var(--gb-bg);
+	border: 1px solid var(--gb-border);
+	border-radius: var(--gb-radius);
+	padding: 20px;
+	box-shadow: var(--gb-shadow);
+}
+
+.geoboost-card__header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	margin-bottom: 16px;
+	gap: 12px;
+}
+
+.geoboost-card__header h2 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--gb-text);
+	letter-spacing: -0.005em;
+}
+
+.geoboost-card__subtitle {
+	font-size: 12px;
+	color: var(--gb-text-subtle);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Data table primitive */
+
+.geoboost-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.geoboost-table th,
+.geoboost-table td {
+	text-align: left;
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--gb-border);
+}
+
+.geoboost-table th {
+	font-weight: 500;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--gb-text-subtle);
+	background: var(--gb-bg-subtle);
+}
+
+.geoboost-table tr:last-child td {
+	border-bottom: 0;
+}
+
+.geoboost-table tr:hover td {
+	background: var(--gb-bg-subtle);
+}
+
+.geoboost-table__title a {
+	color: var(--gb-text);
+	text-decoration: none;
+	font-weight: 500;
+}
+
+.geoboost-table__title a:hover {
+	color: var(--gb-primary);
+	text-decoration: underline;
+}
+
+.geoboost-table__score,
+.geoboost-table__num {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.geoboost-table__meta {
+	color: var(--gb-text-subtle);
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+/* Pill (score tier) */
+
+.geoboost-pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 36px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-weight: 600;
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+
+.geoboost-pill--poor {
+	background: rgba(214, 54, 56, 0.1);
+	color: var(--gb-poor);
+}
+.geoboost-pill--fair {
+	background: rgba(219, 166, 23, 0.12);
+	color: #8c6a10;
+}
+.geoboost-pill--good {
+	background: rgba(104, 183, 103, 0.15);
+	color: #2f6b2f;
+}
+.geoboost-pill--excellent {
+	background: rgba(0, 163, 42, 0.12);
+	color: #00701c;
+}
+
+/* Empty states */
+
+.geoboost-empty {
+	margin: 0;
+	padding: 24px;
+	text-align: center;
+	color: var(--gb-text-subtle);
+	font-size: 13px;
+	background: var(--gb-bg-subtle);
+	border-radius: var(--gb-radius-sm);
+}
+
+.geoboost-empty--tall {
+	padding: 48px 24px;
+}
+
+/* Status dot */
+
+.geoboost-dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 999px;
+	margin-right: 8px;
+	vertical-align: middle;
+	background: var(--gb-text-subtle);
+}
+
+.geoboost-dot--good {
+	background: var(--gb-excellent);
+}
+
+.geoboost-dot--warn {
+	background: var(--gb-fair);
+}
+
+.geoboost-dot--bad {
+	background: var(--gb-poor);
+}

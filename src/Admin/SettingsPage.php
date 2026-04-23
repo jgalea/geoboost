@@ -12,6 +12,25 @@ final class SettingsPage {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_notices', array( $this, 'maybe_show_override_notice' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+	}
+
+	public function enqueue_assets( string $hook_suffix ): void {
+		if ( 'geoboost_page_' . self::SLUG !== $hook_suffix ) {
+			return;
+		}
+		wp_enqueue_style(
+			'geoboost-admin',
+			GEOBOOST_URL . 'assets/admin/admin.css',
+			array(),
+			GEOBOOST_VERSION
+		);
+		wp_enqueue_style(
+			'geoboost-settings',
+			GEOBOOST_URL . 'assets/admin/settings.css',
+			array( 'geoboost-admin' ),
+			GEOBOOST_VERSION
+		);
 	}
 
 	public function maybe_show_override_notice(): void {
@@ -153,15 +172,21 @@ final class SettingsPage {
 				$label,
 				function () use ( $key ): void {
 					$v = (string) get_option( 'geoboost_schema_mode_' . $key, 'auto' );
-					foreach ( array( 'auto', 'force', 'off' ) as $opt ) {
+					echo '<div class="geoboost-schema-mode">';
+					foreach ( array(
+						'auto'  => __( 'Auto', 'geoboost' ),
+						'force' => __( 'Force', 'geoboost' ),
+						'off'   => __( 'Off', 'geoboost' ),
+					) as $opt => $opt_label ) {
 						printf(
-							'<label style="margin-right:1em"><input type="radio" name="geoboost_schema_mode_%1$s" value="%2$s" %3$s /> %4$s</label>',
+							'<label><input type="radio" name="geoboost_schema_mode_%1$s" value="%2$s" %3$s /><span>%4$s</span></label>',
 							esc_attr( $key ),
 							esc_attr( $opt ),
 							checked( $v, $opt, false ),
-							esc_html( ucfirst( $opt ) )
+							esc_html( $opt_label )
 						);
 					}
+					echo '</div>';
 				},
 				self::SLUG,
 				'schema'
@@ -186,26 +211,53 @@ final class SettingsPage {
 			return;
 		}
 		?>
-		<div class="wrap">
-			<h1><?php esc_html_e( 'GEOBoost', 'geoboost' ); ?></h1>
-			<p>
-				<?php
-				printf(
-					/* translators: %s: URL */
-					esc_html__( 'Your llms.txt is served at %s', 'geoboost' ),
-					'<code>' . esc_html( home_url( '/llms.txt' ) ) . '</code>'
-				);
-				?>
-			</p>
-			<form method="post" action="options.php">
-				<?php
-				settings_fields( self::OPTION_GRP );
-				do_settings_sections( self::SLUG );
-				submit_button();
-				?>
-			</form>
+		<div class="wrap geoboost-admin">
+			<div class="geoboost-header">
+				<h1><?php esc_html_e( 'GEOBoost Settings', 'geoboost' ); ?></h1>
+			</div>
+			<div class="geoboost-settings">
+				<p class="geoboost-settings__intro">
+					<?php
+					printf(
+						/* translators: %s: URL */
+						esc_html__( 'Your llms.txt is served at %s', 'geoboost' ),
+						'<code>' . esc_html( home_url( '/llms.txt' ) ) . '</code>'
+					);
+					?>
+				</p>
+				<form method="post" action="options.php">
+					<?php settings_fields( self::OPTION_GRP ); ?>
+					<div class="geoboost-card geoboost-settings__section">
+						<?php $this->render_section( 'main' ); ?>
+					</div>
+					<div class="geoboost-card geoboost-settings__section">
+						<?php $this->render_section( 'schema' ); ?>
+					</div>
+					<?php submit_button(); ?>
+				</form>
+			</div>
 		</div>
 		<?php
+	}
+
+	private function render_section( string $section_id ): void {
+		global $wp_settings_sections, $wp_settings_fields;
+		if ( ! isset( $wp_settings_sections[ self::SLUG ][ $section_id ] ) ) {
+			return;
+		}
+		$section = $wp_settings_sections[ self::SLUG ][ $section_id ];
+		if ( ! empty( $section['title'] ) ) {
+			echo '<h2>' . esc_html( $section['title'] ) . '</h2>';
+		}
+		if ( ! empty( $section['callback'] ) ) {
+			call_user_func( $section['callback'], $section );
+		}
+		if ( ! isset( $wp_settings_fields[ self::SLUG ][ $section_id ] ) ) {
+			return;
+		}
+		echo '<table class="form-table" role="presentation"><tbody>';
+		do_settings_fields( self::SLUG, $section_id );
+		echo '</tbody></table>';
 	}
 
 	public function field_description(): void {
@@ -237,17 +289,17 @@ final class SettingsPage {
 
 	public function field_blocked_bots(): void {
 		$blocked = (array) get_option( 'geoboost_blocked_ai_bots', array() );
-		echo '<fieldset>';
+		echo '<div class="geoboost-bot-list">';
 		foreach ( AiBotController::known_bots() as $bot ) {
 			printf(
-				'<label><input type="checkbox" name="geoboost_blocked_ai_bots[]" value="%1$s" %2$s /> <strong>%3$s</strong> — %4$s</label><br>',
+				'<label><input type="checkbox" name="geoboost_blocked_ai_bots[]" value="%1$s" %2$s /><span class="geoboost-bot-list__text"><span class="geoboost-bot-list__label">%3$s</span><span class="geoboost-bot-list__purpose">%4$s</span></span></label>',
 				esc_attr( $bot['user_agent'] ),
 				checked( in_array( $bot['user_agent'], $blocked, true ), true, false ),
 				esc_html( $bot['label'] ),
 				esc_html( $bot['purpose'] )
 			);
 		}
-		echo '</fieldset>';
+		echo '</div>';
 		echo '<p class="description">' . esc_html__( 'Selected bots will be added to robots.txt with Disallow: / directives.', 'geoboost' ) . '</p>';
 	}
 }

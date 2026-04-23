@@ -1,0 +1,128 @@
+/* GEOBoost — Score meta box (post edit screen) */
+
+.geoboost-scorebox {
+	--gb-sb-text: #1a1f26;
+	--gb-sb-muted: #5a6470;
+	--gb-sb-subtle: #8a94a0;
+	--gb-sb-border: #e1e4e8;
+	--gb-sb-poor: #d63638;
+	--gb-sb-fair: #dba617;
+	--gb-sb-good: #68b767;
+	--gb-sb-excellent: #00a32a;
+
+	margin: -6px -12px -12px;
+	padding: 16px;
+	font-size: 13px;
+	color: var(--gb-sb-text);
+}
+
+.geoboost-scorebox__hero {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding-bottom: 14px;
+	margin-bottom: 14px;
+	border-bottom: 1px solid var(--gb-sb-border);
+}
+
+.geoboost-scorebox__ring {
+	--size: 64px;
+	--track: #eaeef2;
+	position: relative;
+	width: var(--size);
+	height: var(--size);
+	flex-shrink: 0;
+	background: conic-gradient(var(--accent) calc(var(--score) * 1%), var(--track) 0);
+	border-radius: 999px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.geoboost-scorebox__ring::before {
+	content: '';
+	position: absolute;
+	inset: 5px;
+	background: #fff;
+	border-radius: 999px;
+}
+
+.geoboost-scorebox__ring-value {
+	position: relative;
+	font-size: 18px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.01em;
+	line-height: 1;
+}
+
+.geoboost-scorebox__meta {
+	min-width: 0;
+}
+
+.geoboost-scorebox__grade {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--accent);
+	margin-bottom: 2px;
+}
+
+.geoboost-scorebox__note {
+	color: var(--gb-sb-muted);
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.geoboost-scorebox__list-title {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--gb-sb-subtle);
+	margin: 0 0 8px;
+}
+
+.geoboost-scorebox__list {
+	list-style: none;
+	margin: 0 0 12px;
+	padding: 0;
+}
+
+.geoboost-scorebox__list li {
+	position: relative;
+	padding: 4px 0 4px 20px;
+	color: var(--gb-sb-text);
+	line-height: 1.4;
+}
+
+.geoboost-scorebox__list li::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 10px;
+	width: 6px;
+	height: 6px;
+	border-radius: 999px;
+	background: var(--gb-sb-fair);
+}
+
+.geoboost-scorebox__footer {
+	color: var(--gb-sb-subtle);
+	font-size: 11px;
+	margin: 0;
+}
+
+.geoboost-scorebox--tier-poor {
+	--accent: var(--gb-sb-poor);
+}
+.geoboost-scorebox--tier-fair {
+	--accent: var(--gb-sb-fair);
+}
+.geoboost-scorebox--tier-good {
+	--accent: var(--gb-sb-good);
+}
+.geoboost-scorebox--tier-excellent {
+	--accent: var(--gb-sb-excellent);
+}

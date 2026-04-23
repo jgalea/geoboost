@@ -4,15 +4,16 @@ namespace GeoBoost\Admin\Dashboard;
 final class View {
 
 	public function render( array $data ): void {
-		echo '<div class="wrap geoboost-wrap">';
+		echo '<div class="wrap geoboost-admin">';
 		$this->header( $data );
 		$this->kpis( $data );
 		echo '<div class="geoboost-grid">';
 		$this->score_distribution_card( $data['scores'] );
+		$this->site_health_card( $data['health'] );
 		$this->bots_card( $data['bots'] );
+		$this->referrals_card( $data['referrals'] );
 		$this->top_posts_card( $data['top_posts'] );
 		$this->recommendations_card( $data['recommendations'], $data['scores']['total'] );
-		$this->referrals_card( $data['referrals'] );
 		echo '</div>';
 		echo '</div>';
 	}
@@ -124,6 +125,10 @@ final class View {
 	}
 
 	private function score_distribution_card( array $scores ): void {
+		$total   = (int) $scores['total'];
+		$average = (int) $scores['average'];
+		$tier    = $this->score_tier( $average );
+
 		echo '<div class="geoboost-card geoboost-card--6">';
 		printf(
 			'<div class="geoboost-card__header"><h2>%s</h2><span class="geoboost-card__subtitle">%s</span></div>',
@@ -131,13 +136,38 @@ final class View {
 			esc_html(
 				sprintf(
 					/* translators: %d: count */
-					_n( '%d post', '%d posts', (int) $scores['total'], 'geoboost' ),
-					(int) $scores['total']
+					_n( '%d post', '%d posts', $total, 'geoboost' ),
+					$total
 				)
 			)
 		);
-		echo wp_kses( Svg::segmented( $scores['bins'], (int) $scores['total'] ), $this->bar_allowed() );
+
+		if ( $total > 0 ) {
+			printf(
+				'<div class="geoboost-dist-hero">' .
+				'<div class="geoboost-dist-hero__score"><span class="geoboost-pill geoboost-pill--%s">%d</span><span class="geoboost-dist-hero__label">%s</span></div>' .
+				'<p class="geoboost-dist-hero__note">%s</p>' .
+				'</div>',
+				esc_attr( $tier ),
+				(int) $average,
+				esc_html__( 'Site average', 'geoboost' ),
+				esc_html( $this->distribution_note( $scores['bins'], $total ) )
+			);
+		}
+
+		echo wp_kses( Svg::segmented( $scores['bins'], $total ), $this->bar_allowed() );
 		echo '</div>';
+	}
+
+	private function distribution_note( array $bins, int $total ): string {
+		$good_or_better = (int) ( $bins['good'] ?? 0 ) + (int) ( $bins['excellent'] ?? 0 );
+		$pct            = $total > 0 ? (int) round( ( $good_or_better / $total ) * 100 ) : 0;
+		return sprintf(
+			/* translators: 1: percentage, 2: count */
+			__( '%1$d%% of posts (%2$d) are at Good or Excellent.', 'geoboost' ),
+			$pct,
+			$good_or_better
+		);
 	}
 
 	private function bots_card( array $bots ): void {
@@ -175,15 +205,26 @@ final class View {
 		}
 		echo '<table class="geoboost-table"><thead><tr>';
 		echo '<th>' . esc_html__( 'Post', 'geoboost' ) . '</th>';
+		echo '<th class="geoboost-table__meta">' . esc_html__( 'Scanned', 'geoboost' ) . '</th>';
 		echo '<th class="geoboost-table__score">' . esc_html__( 'Score', 'geoboost' ) . '</th>';
 		echo '</tr></thead><tbody>';
 		foreach ( $top_posts as $post ) {
-			$tier = $this->score_tier( (int) $post['score'] );
+			$tier    = $this->score_tier( (int) $post['score'] );
+			$scanned = (int) ( $post['scanned'] ?? 0 );
+			$when    = $scanned > 0
+				? sprintf(
+					/* translators: %s: relative time */
+					__( '%s ago', 'geoboost' ),
+					human_time_diff( $scanned, time() )
+				)
+				: '—';
 			printf(
 				'<tr><td class="geoboost-table__title"><a href="%s">%s</a></td>' .
+				'<td class="geoboost-table__meta">%s</td>' .
 				'<td class="geoboost-table__score"><span class="geoboost-pill geoboost-pill--%s">%d</span></td></tr>',
 				esc_url( (string) $post['edit'] ),
 				esc_html( (string) $post['title'] ),
+				esc_html( $when ),
 				esc_attr( $tier ),
 				(int) $post['score']
 			);
@@ -244,6 +285,59 @@ final class View {
 		echo '</div>';
 	}
 
+	private function site_health_card( array $health ): void {
+		$seo_names = array(
+			'yoast'    => 'Yoast SEO',
+			'rankmath' => 'Rank Math',
+			'aioseo'   => 'All in One SEO',
+			'seopress' => 'SEOPress',
+			'surerank' => 'SureRank',
+			'tsf'      => 'The SEO Framework',
+		);
+		$seo_list  = array();
+		foreach ( (array) $health['seo_plugins'] as $slug ) {
+			$seo_list[] = $seo_names[ $slug ] ?? (string) $slug;
+		}
+		$seo_label  = empty( $seo_list )
+			? __( 'None detected (GEOBoost will emit full schema)', 'geoboost' )
+			: implode( ', ', $seo_list );
+		$llms_label = $health['llms_ok']
+			? __( 'Served by GEOBoost', 'geoboost' )
+			: __( 'Overridden by another source', 'geoboost' );
+		$llms_tone  = $health['llms_ok'] ? 'good' : 'warn';
+
+		echo '<div class="geoboost-card geoboost-card--6">';
+		printf(
+			'<div class="geoboost-card__header"><h2>%s</h2></div>',
+			esc_html__( 'Site health', 'geoboost' )
+		);
+		echo '<ul class="geoboost-health" role="list">';
+		printf(
+			'<li><span class="geoboost-health__label">%s</span><span class="geoboost-health__value">%s</span></li>',
+			esc_html__( 'SEO plugin coexistence', 'geoboost' ),
+			esc_html( $seo_label )
+		);
+		printf(
+			'<li><span class="geoboost-health__label">%s</span><span class="geoboost-health__value"><span class="geoboost-dot geoboost-dot--%s"></span>%s</span></li>',
+			esc_html__( '/llms.txt endpoint', 'geoboost' ),
+			esc_attr( $llms_tone ),
+			esc_html( $llms_label )
+		);
+		printf(
+			'<li><span class="geoboost-health__label">%s</span><span class="geoboost-health__value">%s</span></li>',
+			esc_html__( 'AI bots blocked via robots.txt', 'geoboost' ),
+			esc_html(
+				sprintf(
+					/* translators: %d: count */
+					_n( '%d bot', '%d bots', (int) $health['bots_blocked'], 'geoboost' ),
+					(int) $health['bots_blocked']
+				)
+			)
+		);
+		echo '</ul>';
+		echo '</div>';
+	}
+
 	private function score_tier( int $score ): string {
 		if ( $score >= 80 ) {
 			return 'excellent';
@@ -298,9 +392,10 @@ final class View {
 				'class' => true,
 			),
 			'span'   => array(
-				'class' => true,
-				'style' => true,
-				'title' => true,
+				'class'       => true,
+				'style'       => true,
+				'title'       => true,
+				'aria-hidden' => true,
 			),
 			'strong' => array(
 				'class' => true,

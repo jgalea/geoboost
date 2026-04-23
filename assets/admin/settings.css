@@ -1,0 +1,214 @@
+/* GEOBoost — Settings page (extends admin.css) */
+
+.geoboost-admin .geoboost-settings {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	max-width: 880px;
+}
+
+.geoboost-admin .geoboost-settings__intro {
+	margin: 0 0 4px;
+	color: var(--gb-text-muted);
+	font-size: 13px;
+	line-height: 1.55;
+}
+
+.geoboost-admin .geoboost-settings__intro code {
+	background: var(--gb-bg-subtle);
+	padding: 2px 6px;
+	border-radius: var(--gb-radius-sm);
+	font-size: 12px;
+	color: var(--gb-text);
+}
+
+.geoboost-admin .geoboost-settings form > p.submit {
+	margin-top: 8px;
+}
+
+/* Replace WP's default form-table with a card-friendly layout */
+
+.geoboost-admin .geoboost-settings .form-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0;
+}
+
+.geoboost-admin .geoboost-settings .form-table tr {
+	display: grid;
+	grid-template-columns: 220px 1fr;
+	gap: 16px;
+	padding: 16px 0;
+	border-bottom: 1px solid var(--gb-border);
+}
+
+.geoboost-admin .geoboost-settings .form-table tr:first-child {
+	padding-top: 0;
+}
+
+.geoboost-admin .geoboost-settings .form-table tr:last-child {
+	border-bottom: 0;
+	padding-bottom: 0;
+}
+
+.geoboost-admin .geoboost-settings .form-table th {
+	padding: 0;
+	width: auto;
+	font-weight: 500;
+	font-size: 13px;
+	color: var(--gb-text);
+	text-align: left;
+}
+
+.geoboost-admin .geoboost-settings .form-table td {
+	padding: 0;
+	font-size: 13px;
+	color: var(--gb-text);
+}
+
+.geoboost-admin .geoboost-settings .form-table td p.description {
+	margin: 6px 0 0;
+	color: var(--gb-text-subtle);
+	font-size: 12px;
+	font-style: normal;
+}
+
+.geoboost-admin .geoboost-settings .form-table input[type="text"],
+.geoboost-admin .geoboost-settings .form-table textarea {
+	width: 100%;
+	max-width: 520px;
+	padding: 8px 10px;
+	border: 1px solid var(--gb-border-strong);
+	border-radius: var(--gb-radius-sm);
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--gb-text);
+	background: var(--gb-bg);
+	box-shadow: none;
+}
+
+.geoboost-admin .geoboost-settings .form-table input[type="text"]:focus,
+.geoboost-admin .geoboost-settings .form-table textarea:focus {
+	border-color: var(--gb-primary);
+	outline: 2px solid rgba(34, 113, 177, 0.2);
+	outline-offset: 0;
+}
+
+/* Section heading (h2 rendered by do_settings_sections before each section) */
+
+.geoboost-admin .geoboost-settings .geoboost-settings__section > h2 {
+	margin: 0 0 4px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--gb-text);
+	letter-spacing: -0.005em;
+}
+
+.geoboost-admin .geoboost-settings .geoboost-settings__section > p {
+	margin: 0 0 16px;
+	color: var(--gb-text-subtle);
+	font-size: 12px;
+}
+
+/* Schema mode radio rows — horizontal segmented look */
+
+.geoboost-admin .geoboost-schema-mode {
+	display: inline-flex;
+	gap: 2px;
+	padding: 3px;
+	background: var(--gb-bg-subtle);
+	border-radius: var(--gb-radius-sm);
+	border: 1px solid var(--gb-border);
+}
+
+.geoboost-admin .geoboost-schema-mode label {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 12px;
+	border-radius: 3px;
+	color: var(--gb-text-muted);
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.geoboost-admin .geoboost-schema-mode label:hover {
+	color: var(--gb-text);
+}
+
+.geoboost-admin .geoboost-schema-mode input[type="radio"] {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.geoboost-admin .geoboost-schema-mode input[type="radio"]:checked + span {
+	background: var(--gb-bg);
+	color: var(--gb-text);
+	box-shadow: var(--gb-shadow);
+}
+
+.geoboost-admin .geoboost-schema-mode label span {
+	display: inline-block;
+	padding: 4px 12px;
+	border-radius: 3px;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* Remove default margin on radio */
+.geoboost-admin .geoboost-schema-mode label {
+	padding: 0;
+}
+
+/* Bot checkboxes — stacked cards */
+
+.geoboost-admin .geoboost-bot-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 8px;
+	margin: 0;
+	border: 0;
+	padding: 0;
+}
+
+.geoboost-admin .geoboost-bot-list label {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 12px;
+	border: 1px solid var(--gb-border);
+	border-radius: var(--gb-radius-sm);
+	background: var(--gb-bg);
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.geoboost-admin .geoboost-bot-list label:hover {
+	border-color: var(--gb-border-strong);
+	background: var(--gb-bg-subtle);
+}
+
+.geoboost-admin .geoboost-bot-list input[type="checkbox"] {
+	margin: 2px 0 0;
+	flex-shrink: 0;
+}
+
+.geoboost-admin .geoboost-bot-list__text {
+	display: block;
+	line-height: 1.4;
+}
+
+.geoboost-admin .geoboost-bot-list__label {
+	display: block;
+	font-weight: 600;
+	color: var(--gb-text);
+	font-size: 13px;
+}
+
+.geoboost-admin .geoboost-bot-list__purpose {
+	display: block;
+	color: var(--gb-text-subtle);
+	font-size: 12px;
+	margin-top: 2px;
+}
