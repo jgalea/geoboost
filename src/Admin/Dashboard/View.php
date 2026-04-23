@@ -267,7 +267,7 @@ final class View {
 				continue;
 			}
 			$has_recs = true;
-			$url      = admin_url( 'edit.php?post_status=publish&post_type=post&geoboost_filter=' . rawurlencode( $key ) );
+			$url      = admin_url( 'admin.php?page=geoboost-fix&type=' . rawurlencode( $key ) );
 			printf(
 				'<a class="geoboost-rec" href="%s"><span class="geoboost-rec__count">%s</span>' .
 				'<span class="geoboost-rec__body">%s</span><span class="geoboost-rec__arrow" aria-hidden="true">→</span></a>',

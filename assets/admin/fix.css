@@ -1,0 +1,235 @@
+/* GEOBoost — Fix page (extends admin.css) */
+
+.geoboost-admin .geoboost-fix__intro {
+	color: var(--gb-text-muted);
+	margin: 0 0 16px;
+	font-size: 13px;
+}
+
+/* Index cards (when no type selected) */
+
+.geoboost-admin .geoboost-fix__index {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 12px;
+}
+
+.geoboost-admin .geoboost-fix__index-card {
+	position: relative;
+	background: var(--gb-bg);
+	border: 1px solid var(--gb-border);
+	border-radius: var(--gb-radius);
+	padding: 16px 40px 16px 16px;
+	box-shadow: var(--gb-shadow);
+	text-decoration: none;
+	color: var(--gb-text);
+	transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.geoboost-admin .geoboost-fix__index-card:hover {
+	border-color: var(--gb-border-strong);
+	box-shadow: var(--gb-shadow-hover);
+	transform: translateY(-1px);
+}
+
+.geoboost-admin .geoboost-fix__index-card h3 {
+	margin: 0 0 4px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--gb-text);
+}
+
+.geoboost-admin .geoboost-fix__index-card p {
+	margin: 0;
+	font-size: 13px;
+	color: var(--gb-text-muted);
+	line-height: 1.5;
+}
+
+.geoboost-admin .geoboost-fix__index-arrow {
+	position: absolute;
+	right: 16px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--gb-text-subtle);
+	font-size: 18px;
+	transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.geoboost-admin .geoboost-fix__index-card:hover .geoboost-fix__index-arrow {
+	color: var(--gb-primary);
+	transform: translate(2px, -50%);
+}
+
+/* Detail view layout */
+
+.geoboost-admin .geoboost-fix__layout {
+	display: grid;
+	grid-template-columns: 340px 1fr;
+	gap: 16px;
+	align-items: start;
+}
+
+@media (max-width: 960px) {
+	.geoboost-admin .geoboost-fix__layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+.geoboost-admin .geoboost-fix__explain h2 {
+	margin: 0 0 6px;
+	font-size: 13px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	color: var(--gb-text);
+}
+
+.geoboost-admin .geoboost-fix__explain h2:not(:first-child) {
+	margin-top: 16px;
+}
+
+.geoboost-admin .geoboost-fix__explain p {
+	margin: 0;
+	color: var(--gb-text-muted);
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.geoboost-admin .geoboost-fix__explain .button {
+	margin-top: 6px;
+}
+
+/* Posts table */
+
+.geoboost-admin .geoboost-fix__table th,
+.geoboost-admin .geoboost-fix__table td {
+	vertical-align: top;
+}
+
+.geoboost-admin .geoboost-fix__preview {
+	margin-top: 4px;
+	color: var(--gb-text-subtle);
+	font-size: 12px;
+	line-height: 1.5;
+	font-weight: 400;
+}
+
+.geoboost-admin .geoboost-fix__actions {
+	white-space: nowrap;
+	text-align: right;
+}
+
+.geoboost-admin .geoboost-fix__actions .button {
+	margin-right: 6px;
+}
+
+.geoboost-admin .geoboost-fix__form {
+	display: inline-block;
+	margin: 0 6px 0 0;
+}
+
+.geoboost-admin .geoboost-fix__action-secondary {
+	color: var(--gb-text-subtle);
+	text-decoration: none;
+	font-size: 12px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin-left: 2px;
+}
+
+.geoboost-admin .geoboost-fix__action-secondary:hover {
+	color: var(--gb-primary);
+}
+
+.geoboost-admin .geoboost-fix__action-secondary .dashicons {
+	font-size: 14px;
+	width: 14px;
+	height: 14px;
+}
+
+/* View tabs (pending / dismissed) */
+
+.geoboost-admin .geoboost-fix__tabs {
+	display: flex;
+	gap: 4px;
+	margin: -4px 0 14px;
+	border-bottom: 1px solid var(--gb-border);
+	padding-bottom: 0;
+}
+
+.geoboost-admin .geoboost-fix__tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 12px;
+	color: var(--gb-text-muted);
+	font-size: 13px;
+	font-weight: 500;
+	text-decoration: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.geoboost-admin .geoboost-fix__tab:hover {
+	color: var(--gb-text);
+}
+
+.geoboost-admin .geoboost-fix__tab.is-active {
+	color: var(--gb-text);
+	border-bottom-color: var(--gb-primary);
+}
+
+.geoboost-admin .geoboost-fix__tab-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 22px;
+	height: 18px;
+	padding: 0 6px;
+	background: var(--gb-bg-subtle);
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--gb-text-subtle);
+	font-variant-numeric: tabular-nums;
+}
+
+.geoboost-admin .geoboost-fix__tab.is-active .geoboost-fix__tab-count {
+	background: rgba(34, 113, 177, 0.1);
+	color: var(--gb-primary);
+}
+
+/* Dismiss button */
+
+.geoboost-admin .geoboost-fix__dismiss {
+	color: var(--gb-text-subtle);
+	font-size: 12px;
+	padding: 0 4px;
+	cursor: pointer;
+	border: 0;
+	background: transparent;
+}
+
+.geoboost-admin .geoboost-fix__dismiss:hover {
+	color: var(--gb-down);
+	text-decoration: underline;
+}
+
+/* Pagination */
+
+.geoboost-admin .geoboost-fix__pagination {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 16px;
+	padding-top: 14px;
+	border-top: 1px solid var(--gb-border);
+}
+
+.geoboost-admin .geoboost-fix__pagination-info {
+	color: var(--gb-text-subtle);
+	font-size: 12px;
+	margin-left: auto;
+}

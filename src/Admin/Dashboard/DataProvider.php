@@ -1,6 +1,7 @@
 <?php
 namespace GeoBoost\Admin\Dashboard;
 
+use GeoBoost\Admin\Dismissals;
 use GeoBoost\Events\EventsTable;
 use GeoBoost\LlmsTxt\OverrideDetector;
 use GeoBoost\SeoIntegration\Detector;
@@ -195,10 +196,10 @@ final class DataProvider {
 
 	private function recommendations(): array {
 		global $wpdb;
-		$rows   = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			"SELECT meta_value AS details FROM {$wpdb->postmeta} WHERE meta_key = '_geoboost_score_details'"
+		$rows          = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			"SELECT post_id, meta_value AS details FROM {$wpdb->postmeta} WHERE meta_key = '_geoboost_score_details'"
 		);
-		$counts = array(
+		$counts        = array(
 			'missing_summary'     => 0,
 			'missing_key_facts'   => 0,
 			'missing_faq'         => 0,
@@ -207,31 +208,30 @@ final class DataProvider {
 			'missing_author_eeat' => 0,
 			'missing_featured'    => 0,
 		);
+		$signal_map    = array(
+			'missing_summary'     => 'has_summary',
+			'missing_key_facts'   => 'has_key_facts',
+			'missing_faq'         => 'has_faq_signal',
+			'heading_hierarchy'   => 'heading_hierarchy_ok',
+			'word_count'          => 'word_count_ok',
+			'missing_author_eeat' => 'has_author_eeat',
+			'missing_featured'    => 'has_featured',
+		);
+		$dismissals    = new Dismissals();
+		$dismissed_map = array();
+		foreach ( array_keys( $signal_map ) as $type ) {
+			$dismissed_map[ $type ] = array_flip( $dismissals->dismissed_ids_for_type( $type ) );
+		}
 		foreach ( (array) $rows as $row ) {
-			$d = maybe_unserialize( $row->details );
+			$post_id = (int) $row->post_id;
+			$d       = maybe_unserialize( $row->details );
 			if ( ! is_array( $d ) ) {
 				continue;
 			}
-			if ( empty( $d['has_summary'] ) ) {
-				++$counts['missing_summary'];
-			}
-			if ( empty( $d['has_key_facts'] ) ) {
-				++$counts['missing_key_facts'];
-			}
-			if ( empty( $d['has_faq_signal'] ) ) {
-				++$counts['missing_faq'];
-			}
-			if ( empty( $d['heading_hierarchy_ok'] ) ) {
-				++$counts['heading_hierarchy'];
-			}
-			if ( empty( $d['word_count_ok'] ) ) {
-				++$counts['word_count'];
-			}
-			if ( empty( $d['has_author_eeat'] ) ) {
-				++$counts['missing_author_eeat'];
-			}
-			if ( empty( $d['has_featured'] ) ) {
-				++$counts['missing_featured'];
+			foreach ( $signal_map as $type => $signal_key ) {
+				if ( empty( $d[ $signal_key ] ) && ! isset( $dismissed_map[ $type ][ $post_id ] ) ) {
+					++$counts[ $type ];
+				}
 			}
 		}
 		return $counts;
