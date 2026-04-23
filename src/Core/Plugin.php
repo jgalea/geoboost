@@ -56,6 +56,7 @@ final class Plugin {
 		if ( is_admin() ) {
 			( new \GeoBoost\Admin\Dashboard\Page() )->register();
 			( new \GeoBoost\Admin\SettingsPage() )->register();
+			( new \GeoBoost\Admin\PostListFilter() )->register();
 			( new \GeoBoost\Admin\MetaBoxes\CustomJsonLdBox() )->register();
 			( new \GeoBoost\Admin\MetaBoxes\ScoreBox() )->register();
 			( new \GeoBoost\Admin\MetaBoxes\LlmsTxtEntryBox() )->register();

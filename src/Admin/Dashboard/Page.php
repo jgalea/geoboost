@@ -7,6 +7,7 @@ final class Page {
 
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
 	public function add_menu(): void {
@@ -29,16 +30,23 @@ final class Page {
 		);
 	}
 
+	public function enqueue_assets( string $hook_suffix ): void {
+		if ( 'toplevel_page_' . self::SLUG !== $hook_suffix ) {
+			return;
+		}
+		wp_enqueue_style(
+			'geoboost-dashboard',
+			GEOBOOST_URL . 'assets/admin/dashboard.css',
+			array(),
+			GEOBOOST_VERSION
+		);
+	}
+
 	public function render(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		echo '<div class="wrap geoboost-dashboard"><h1>' . esc_html__( 'GEOBoost Dashboard', 'geoboost' ) . '</h1>';
-		echo '<div class="geoboost-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:2em;margin-top:1em">';
-		echo '<div>' . ( new ScoreWidget() )->render() . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<div>' . ( new BotWidget() )->render() . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<div>' . ( new ReferralWidget() )->render() . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<div>' . ( new RecommendationsWidget() )->render() . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '</div></div>';
+		$data = ( new DataProvider() )->get();
+		( new View() )->render( $data );
 	}
 }

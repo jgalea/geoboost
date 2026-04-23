@@ -1,0 +1,313 @@
+<?php
+namespace GeoBoost\Admin\Dashboard;
+
+final class View {
+
+	public function render( array $data ): void {
+		echo '<div class="wrap geoboost-wrap">';
+		$this->header( $data );
+		$this->kpis( $data );
+		echo '<div class="geoboost-grid">';
+		$this->score_distribution_card( $data['scores'] );
+		$this->bots_card( $data['bots'] );
+		$this->top_posts_card( $data['top_posts'] );
+		$this->recommendations_card( $data['recommendations'], $data['scores']['total'] );
+		$this->referrals_card( $data['referrals'] );
+		echo '</div>';
+		echo '</div>';
+	}
+
+	private function header( array $data ): void {
+		printf(
+			'<div class="geoboost-header"><h1>%s</h1><span class="geoboost-header__meta">%s</span></div>',
+			esc_html__( 'GEOBoost Dashboard', 'geoboost' ),
+			esc_html(
+				sprintf(
+					/* translators: %s: relative time */
+					__( 'Updated %s', 'geoboost' ),
+					human_time_diff( (int) $data['generated_at'], time() ) . ' ' . __( 'ago', 'geoboost' )
+				)
+			)
+		);
+	}
+
+	private function kpis( array $data ): void {
+		$scores    = $data['scores'];
+		$bots      = $data['bots'];
+		$referrals = $data['referrals'];
+
+		echo '<div class="geoboost-kpis">';
+
+		$this->kpi(
+			__( 'Average GEO score', 'geoboost' ),
+			$scores['total'] > 0 ? (string) $scores['average'] : '—',
+			sprintf(
+				/* translators: %d: count */
+				_n( 'across %d scored post', 'across %d scored posts', (int) $scores['total'], 'geoboost' ),
+				(int) $scores['total']
+			),
+			null
+		);
+
+		$this->kpi(
+			__( 'AI bot crawls', 'geoboost' ),
+			number_format_i18n( (int) $bots['total'] ),
+			$this->delta_label( (int) $bots['delta'], $bots['percent'] ),
+			Svg::sparkline( $data['sparkline'], __( 'Daily bot crawls', 'geoboost' ) ),
+			$this->delta_class( (int) $bots['delta'] )
+		);
+
+		$this->kpi(
+			__( 'AI referral clicks', 'geoboost' ),
+			number_format_i18n( (int) $referrals['total'] ),
+			$this->delta_label( (int) $referrals['delta'], $referrals['percent'] ),
+			null,
+			$this->delta_class( (int) $referrals['delta'] )
+		);
+
+		$top_bot = '';
+		if ( ! empty( $bots['series'] ) ) {
+			$top_bot = (string) array_key_first( $bots['series'] );
+		}
+		$this->kpi(
+			__( 'Top crawler', 'geoboost' ),
+			'' !== $top_bot ? $top_bot : '—',
+			'' !== $top_bot ? sprintf(
+				/* translators: %s: number of crawls */
+				__( '%s crawls in 30d', 'geoboost' ),
+				number_format_i18n( (int) $bots['series'][ $top_bot ] )
+			) : __( 'No crawls detected yet', 'geoboost' ),
+			null
+		);
+
+		echo '</div>';
+	}
+
+	private function kpi( string $label, string $value, string $sub, ?string $spark = null, string $delta_class = '' ): void {
+		echo '<div class="geoboost-kpi">';
+		echo '<span class="geoboost-kpi__label">' . esc_html( $label ) . '</span>';
+		echo '<span class="geoboost-kpi__value">' . esc_html( $value ) . '</span>';
+		if ( '' !== $sub ) {
+			printf(
+				'<span class="geoboost-kpi__delta%s">%s</span>',
+				'' !== $delta_class ? ' ' . esc_attr( $delta_class ) : '',
+				esc_html( $sub )
+			);
+		}
+		if ( null !== $spark && '' !== $spark ) {
+			echo '<div class="geoboost-kpi__spark">' . wp_kses( $spark, $this->svg_allowed() ) . '</div>';
+		}
+		echo '</div>';
+	}
+
+	private function delta_label( int $delta, ?int $percent ): string {
+		if ( null === $percent ) {
+			return __( 'vs. no prior data', 'geoboost' );
+		}
+		$arrow = $delta > 0 ? '▲' : ( $delta < 0 ? '▼' : '–' );
+		return sprintf(
+			/* translators: 1: arrow symbol, 2: percentage */
+			__( '%1$s %2$s%% vs. prior 30d', 'geoboost' ),
+			$arrow,
+			number_format_i18n( abs( (int) $percent ) )
+		);
+	}
+
+	private function delta_class( int $delta ): string {
+		if ( $delta > 0 ) {
+			return 'geoboost-kpi__delta--up';
+		}
+		if ( $delta < 0 ) {
+			return 'geoboost-kpi__delta--down';
+		}
+		return '';
+	}
+
+	private function score_distribution_card( array $scores ): void {
+		echo '<div class="geoboost-card geoboost-card--6">';
+		printf(
+			'<div class="geoboost-card__header"><h2>%s</h2><span class="geoboost-card__subtitle">%s</span></div>',
+			esc_html__( 'Score distribution', 'geoboost' ),
+			esc_html(
+				sprintf(
+					/* translators: %d: count */
+					_n( '%d post', '%d posts', (int) $scores['total'], 'geoboost' ),
+					(int) $scores['total']
+				)
+			)
+		);
+		echo wp_kses( Svg::segmented( $scores['bins'], (int) $scores['total'] ), $this->bar_allowed() );
+		echo '</div>';
+	}
+
+	private function bots_card( array $bots ): void {
+		echo '<div class="geoboost-card geoboost-card--6">';
+		printf(
+			'<div class="geoboost-card__header"><h2>%s</h2><span class="geoboost-card__subtitle">%s</span></div>',
+			esc_html__( 'AI bot activity', 'geoboost' ),
+			esc_html__( 'Last 30 days', 'geoboost' )
+		);
+		echo wp_kses( Svg::bars( $bots['series'], __( 'AI bot activity', 'geoboost' ) ), $this->bar_allowed() );
+		echo '</div>';
+	}
+
+	private function referrals_card( array $referrals ): void {
+		echo '<div class="geoboost-card geoboost-card--6">';
+		printf(
+			'<div class="geoboost-card__header"><h2>%s</h2><span class="geoboost-card__subtitle">%s</span></div>',
+			esc_html__( 'AI referral clicks', 'geoboost' ),
+			esc_html__( 'Last 30 days', 'geoboost' )
+		);
+		echo wp_kses( Svg::bars( $referrals['series'], __( 'AI referral clicks', 'geoboost' ) ), $this->bar_allowed() );
+		echo '</div>';
+	}
+
+	private function top_posts_card( array $top_posts ): void {
+		echo '<div class="geoboost-card geoboost-card--6">';
+		printf(
+			'<div class="geoboost-card__header"><h2>%s</h2></div>',
+			esc_html__( 'Top performing posts', 'geoboost' )
+		);
+		if ( empty( $top_posts ) ) {
+			echo '<p class="geoboost-empty">' . esc_html__( 'No scored posts yet.', 'geoboost' ) . '</p>';
+			echo '</div>';
+			return;
+		}
+		echo '<table class="geoboost-table"><thead><tr>';
+		echo '<th>' . esc_html__( 'Post', 'geoboost' ) . '</th>';
+		echo '<th class="geoboost-table__score">' . esc_html__( 'Score', 'geoboost' ) . '</th>';
+		echo '</tr></thead><tbody>';
+		foreach ( $top_posts as $post ) {
+			$tier = $this->score_tier( (int) $post['score'] );
+			printf(
+				'<tr><td class="geoboost-table__title"><a href="%s">%s</a></td>' .
+				'<td class="geoboost-table__score"><span class="geoboost-pill geoboost-pill--%s">%d</span></td></tr>',
+				esc_url( (string) $post['edit'] ),
+				esc_html( (string) $post['title'] ),
+				esc_attr( $tier ),
+				(int) $post['score']
+			);
+		}
+		echo '</tbody></table>';
+		echo '</div>';
+	}
+
+	private function recommendations_card( array $counts, int $total_scored ): void {
+		$labels = array(
+			'missing_summary'     => __( 'posts missing a Summary block', 'geoboost' ),
+			'missing_key_facts'   => __( 'posts missing Key Facts', 'geoboost' ),
+			'missing_faq'         => __( 'posts missing FAQ signals', 'geoboost' ),
+			'heading_hierarchy'   => __( 'posts with heading hierarchy issues', 'geoboost' ),
+			'word_count'          => __( 'posts outside 300–3000 word sweet spot', 'geoboost' ),
+			'missing_author_eeat' => __( 'posts with weak author E-E-A-T signals', 'geoboost' ),
+			'missing_featured'    => __( 'posts without a featured image', 'geoboost' ),
+		);
+		arsort( $counts );
+
+		echo '<div class="geoboost-card geoboost-card--6">';
+		printf(
+			'<div class="geoboost-card__header"><h2>%s</h2><span class="geoboost-card__subtitle">%s</span></div>',
+			esc_html__( 'Recommendations', 'geoboost' ),
+			esc_html__( 'Biggest wins first', 'geoboost' )
+		);
+
+		if ( 0 === $total_scored ) {
+			echo '<p class="geoboost-empty geoboost-empty--tall">' .
+				esc_html__( 'No posts have been analyzed yet. Save any post to generate its GEO score.', 'geoboost' ) .
+				'</p>';
+			echo '</div>';
+			return;
+		}
+
+		$has_recs = false;
+		echo '<div class="geoboost-recs">';
+		foreach ( $counts as $key => $count ) {
+			if ( $count <= 0 ) {
+				continue;
+			}
+			$has_recs = true;
+			$url      = admin_url( 'edit.php?post_status=publish&post_type=post&geoboost_filter=' . rawurlencode( $key ) );
+			printf(
+				'<a class="geoboost-rec" href="%s"><span class="geoboost-rec__count">%s</span>' .
+				'<span class="geoboost-rec__body">%s</span><span class="geoboost-rec__arrow" aria-hidden="true">→</span></a>',
+				esc_url( $url ),
+				esc_html( number_format_i18n( (int) $count ) ),
+				esc_html( $labels[ $key ] )
+			);
+		}
+		if ( ! $has_recs ) {
+			echo '<p class="geoboost-empty">' .
+				esc_html__( 'Every post passes the baseline checks. Nice work.', 'geoboost' ) .
+				'</p>';
+		}
+		echo '</div>';
+		echo '</div>';
+	}
+
+	private function score_tier( int $score ): string {
+		if ( $score >= 80 ) {
+			return 'excellent';
+		}
+		if ( $score >= 60 ) {
+			return 'good';
+		}
+		if ( $score >= 40 ) {
+			return 'fair';
+		}
+		return 'poor';
+	}
+
+	/**
+	 * @return array<string,array<string,bool|array<int,string>>>
+	 */
+	private function svg_allowed(): array {
+		return array(
+			'svg'      => array(
+				'class'               => true,
+				'role'                => true,
+				'aria-label'          => true,
+				'viewBox'             => true,
+				'preserveAspectRatio' => true,
+			),
+			'polyline' => array(
+				'class'  => true,
+				'points' => true,
+			),
+			'polygon'  => array(
+				'class'  => true,
+				'points' => true,
+			),
+		);
+	}
+
+	/**
+	 * @return array<string,array<string,bool>>
+	 */
+	private function bar_allowed(): array {
+		return array(
+			'div'    => array(
+				'class' => true,
+				'role'  => true,
+			),
+			'ul'     => array(
+				'class'      => true,
+				'role'       => true,
+				'aria-label' => true,
+			),
+			'li'     => array(
+				'class' => true,
+			),
+			'span'   => array(
+				'class' => true,
+				'style' => true,
+				'title' => true,
+			),
+			'strong' => array(
+				'class' => true,
+			),
+			'p'      => array(
+				'class' => true,
+			),
+		);
+	}
+}
