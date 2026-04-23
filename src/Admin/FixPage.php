@@ -25,27 +25,19 @@ final class FixPage {
 	}
 
 	public function add_menu(): void {
+		// Hidden page — accessible via URL, not shown in the admin menu.
 		add_submenu_page(
-			'geoboost',
+			'',
 			__( 'Fix', 'geoboost' ),
 			__( 'Fix', 'geoboost' ),
 			'manage_options',
 			self::SLUG,
 			array( $this, 'render' )
 		);
-		// Hide from the menu — accessed via dashboard deep links.
-		global $submenu;
-		if ( isset( $submenu['geoboost'] ) ) {
-			foreach ( $submenu['geoboost'] as $i => $item ) {
-				if ( self::SLUG === ( $item[2] ?? '' ) ) {
-					unset( $submenu['geoboost'][ $i ] );
-				}
-			}
-		}
 	}
 
 	public function enqueue_assets( string $hook_suffix ): void {
-		if ( 'geoboost_page_' . self::SLUG !== $hook_suffix ) {
+		if ( 'admin_page_' . self::SLUG !== $hook_suffix ) {
 			return;
 		}
 		wp_enqueue_style(
@@ -150,7 +142,8 @@ final class FixPage {
 		}
 
 		echo '<table class="geoboost-table geoboost-fix__table"><thead><tr>';
-		echo '<th>' . esc_html__( 'Post', 'geoboost' ) . '</th>';
+		echo '<th>' . esc_html__( 'Entry', 'geoboost' ) . '</th>';
+		echo '<th class="geoboost-fix__th-type">' . esc_html__( 'Type', 'geoboost' ) . '</th>';
 		echo '<th class="geoboost-table__score">' . esc_html__( 'Score', 'geoboost' ) . '</th>';
 		echo '<th>' . esc_html__( 'Actions', 'geoboost' ) . '</th>';
 		echo '</tr></thead><tbody>';
@@ -165,12 +158,19 @@ final class FixPage {
 			$edit      = (string) get_edit_post_link( $post->ID );
 			$permalink = (string) get_permalink( $post->ID );
 
+			$type_label = 'page' === $post->post_type ? __( 'Page', 'geoboost' ) : __( 'Post', 'geoboost' );
+
 			echo '<tr>';
 			printf(
 				'<td class="geoboost-table__title"><a href="%s">%s</a><div class="geoboost-fix__preview">%s</div></td>',
 				esc_url( $edit ),
 				esc_html( $post->post_title ),
 				esc_html( $this->preview( $post ) )
+			);
+			printf(
+				'<td class="geoboost-fix__td-type"><span class="geoboost-fix__type geoboost-fix__type--%s">%s</span></td>',
+				esc_attr( $post->post_type ),
+				esc_html( $type_label )
 			);
 			printf(
 				'<td class="geoboost-table__score"><span class="geoboost-pill geoboost-pill--%s">%d</span></td>',

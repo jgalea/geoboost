@@ -96,6 +96,9 @@ final class ScoreBox {
 		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
 			return;
 		}
+		if ( ! in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
+			return;
+		}
 		if ( 'publish' !== $post->post_status && 'draft' !== $post->post_status && 'private' !== $post->post_status ) {
 			return;
 		}

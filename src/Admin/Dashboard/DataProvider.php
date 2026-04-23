@@ -197,7 +197,12 @@ final class DataProvider {
 	private function recommendations(): array {
 		global $wpdb;
 		$rows          = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			"SELECT post_id, meta_value AS details FROM {$wpdb->postmeta} WHERE meta_key = '_geoboost_score_details'"
+			"SELECT pm.post_id, pm.meta_value AS details
+			FROM {$wpdb->postmeta} pm
+			INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+			WHERE pm.meta_key = '_geoboost_score_details'
+			AND p.post_status = 'publish'
+			AND p.post_type IN ('post','page')"
 		);
 		$counts        = array(
 			'missing_summary'     => 0,
