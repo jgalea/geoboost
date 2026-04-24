@@ -1,0 +1,77 @@
+.geoboost-statusbox {
+    font-size: 13px;
+}
+
+.geoboost-statusbox__status {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    border-radius: 4px;
+}
+
+.geoboost-statusbox__status--ok {
+    background: #ecf7ed;
+    color: #2a6b30;
+}
+
+.geoboost-statusbox__status--warn {
+    background: #fdf3e7;
+    color: #8a4b0c;
+}
+
+.geoboost-statusbox__essentials {
+    margin: 0 0 12px;
+    padding-left: 18px;
+    list-style: disc;
+    color: #4a4a4a;
+}
+
+.geoboost-statusbox__essentials li {
+    margin: 2px 0;
+}
+
+.geoboost-statusbox__recs {
+    margin: 0 0 8px;
+    border-top: 1px solid #e2e4e7;
+    padding-top: 8px;
+}
+
+.geoboost-statusbox__recs > summary {
+    cursor: pointer;
+    color: #2271b1;
+    font-weight: 500;
+    list-style: none;
+}
+
+.geoboost-statusbox__recs > summary::-webkit-details-marker {
+    display: none;
+}
+
+.geoboost-statusbox__recs > summary::before {
+    content: "▶ ";
+    font-size: 9px;
+    margin-right: 4px;
+}
+
+.geoboost-statusbox__recs[open] > summary::before {
+    content: "▼ ";
+}
+
+.geoboost-statusbox__recs ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    list-style: disc;
+    color: #4a4a4a;
+}
+
+.geoboost-statusbox__recs ul li {
+    margin: 4px 0;
+}
+
+.geoboost-statusbox__footer {
+    margin: 8px 0 0;
+    color: #757575;
+    font-size: 11px;
+    font-style: italic;
+}

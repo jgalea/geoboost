@@ -8,12 +8,11 @@ final class View {
 		$this->header( $data );
 		$this->kpis( $data );
 		echo '<div class="geoboost-grid">';
-		$this->score_distribution_card( $data['scores'] );
+		$this->essentials_card( $data['essentials'], $data['total_posts'] );
+		$this->recommendations_card( $data['recommendations'], $data['total_posts'] );
 		$this->site_health_card( $data['health'] );
 		$this->bots_card( $data['bots'] );
 		$this->referrals_card( $data['referrals'] );
-		$this->top_posts_card( $data['top_posts'] );
-		$this->recommendations_card( $data['recommendations'], $data['scores']['total'] );
 		echo '</div>';
 		echo '</div>';
 	}
@@ -33,19 +32,22 @@ final class View {
 	}
 
 	private function kpis( array $data ): void {
-		$scores    = $data['scores'];
 		$bots      = $data['bots'];
 		$referrals = $data['referrals'];
 
 		echo '<div class="geoboost-kpis">';
 
+		$passing     = (int) ( $data['posts_passing_essentials'] ?? 0 );
+		$total_posts = (int) ( $data['total_posts'] ?? 0 );
+		$passing_pct = $total_posts > 0 ? (int) round( ( $passing / $total_posts ) * 100 ) : 0;
 		$this->kpi(
-			__( 'Average GEO score', 'geoboost' ),
-			$scores['total'] > 0 ? (string) $scores['average'] : '—',
+			__( 'Posts passing essentials', 'geoboost' ),
+			$total_posts > 0 ? $passing_pct . '%' : '—',
 			sprintf(
-				/* translators: %d: count */
-				_n( 'across %d scored post', 'across %d scored posts', (int) $scores['total'], 'geoboost' ),
-				(int) $scores['total']
+				/* translators: 1: pass count, 2: total */
+				__( '%1$d of %2$d posts', 'geoboost' ),
+				$passing,
+				$total_posts
 			),
 			null
 		);
@@ -124,52 +126,6 @@ final class View {
 		return '';
 	}
 
-	private function score_distribution_card( array $scores ): void {
-		$total   = (int) $scores['total'];
-		$average = (int) $scores['average'];
-		$tier    = $this->score_tier( $average );
-
-		echo '<div class="geoboost-card geoboost-card--6">';
-		printf(
-			'<div class="geoboost-card__header"><h2>%s</h2><span class="geoboost-card__subtitle">%s</span></div>',
-			esc_html__( 'Score distribution', 'geoboost' ),
-			esc_html(
-				sprintf(
-					/* translators: %d: count */
-					_n( '%d post', '%d posts', $total, 'geoboost' ),
-					$total
-				)
-			)
-		);
-
-		if ( $total > 0 ) {
-			printf(
-				'<div class="geoboost-dist-hero">' .
-				'<div class="geoboost-dist-hero__score"><span class="geoboost-pill geoboost-pill--%s">%d</span><span class="geoboost-dist-hero__label">%s</span></div>' .
-				'<p class="geoboost-dist-hero__note">%s</p>' .
-				'</div>',
-				esc_attr( $tier ),
-				(int) $average,
-				esc_html__( 'Site average', 'geoboost' ),
-				esc_html( $this->distribution_note( $scores['bins'], $total ) )
-			);
-		}
-
-		echo wp_kses( Svg::segmented( $scores['bins'], $total ), $this->bar_allowed() );
-		echo '</div>';
-	}
-
-	private function distribution_note( array $bins, int $total ): string {
-		$good_or_better = (int) ( $bins['good'] ?? 0 ) + (int) ( $bins['excellent'] ?? 0 );
-		$pct            = $total > 0 ? (int) round( ( $good_or_better / $total ) * 100 ) : 0;
-		return sprintf(
-			/* translators: 1: percentage, 2: count */
-			__( '%1$d%% of posts (%2$d) are at Good or Excellent.', 'geoboost' ),
-			$pct,
-			$good_or_better
-		);
-	}
-
 	private function bots_card( array $bots ): void {
 		echo '<div class="geoboost-card geoboost-card--6">';
 		printf(
@@ -192,56 +148,63 @@ final class View {
 		echo '</div>';
 	}
 
-	private function top_posts_card( array $top_posts ): void {
+	private function essentials_card( array $counts, int $total_posts ): void {
+		$labels = array(
+			'missing_article_schema' => __( 'posts missing Article schema', 'geoboost' ),
+			'heading_hierarchy'      => __( 'posts with heading hierarchy issues', 'geoboost' ),
+			'word_count'             => __( 'posts under 150 words', 'geoboost' ),
+			'missing_author_eeat'    => __( 'posts with weak author E-E-A-T signals', 'geoboost' ),
+		);
+		arsort( $counts );
+
 		echo '<div class="geoboost-card geoboost-card--6">';
 		printf(
-			'<div class="geoboost-card__header"><h2>%s</h2></div>',
-			esc_html__( 'Top performing posts', 'geoboost' )
+			'<div class="geoboost-card__header"><h2>%s</h2><span class="geoboost-card__subtitle">%s</span></div>',
+			esc_html__( 'Essential issues', 'geoboost' ),
+			esc_html__( 'Fix these first', 'geoboost' )
 		);
-		if ( empty( $top_posts ) ) {
-			echo '<p class="geoboost-empty">' . esc_html__( 'No scored posts yet.', 'geoboost' ) . '</p>';
-			echo '</div>';
+
+		if ( 0 === $total_posts ) {
+			echo '<p class="geoboost-empty geoboost-empty--tall">' .
+				esc_html__( 'No posts have been analyzed yet. Save any post to evaluate.', 'geoboost' ) .
+				'</p></div>';
 			return;
 		}
-		echo '<table class="geoboost-table"><thead><tr>';
-		echo '<th>' . esc_html__( 'Post', 'geoboost' ) . '</th>';
-		echo '<th class="geoboost-table__meta">' . esc_html__( 'Scanned', 'geoboost' ) . '</th>';
-		echo '<th class="geoboost-table__score">' . esc_html__( 'Score', 'geoboost' ) . '</th>';
-		echo '</tr></thead><tbody>';
-		foreach ( $top_posts as $post ) {
-			$tier    = $this->score_tier( (int) $post['score'] );
-			$scanned = (int) ( $post['scanned'] ?? 0 );
-			$when    = $scanned > 0
-				? sprintf(
-					/* translators: %s: relative time */
-					__( '%s ago', 'geoboost' ),
-					human_time_diff( $scanned, time() )
-				)
-				: '—';
+
+		$has_issues = false;
+		echo '<div class="geoboost-recs">';
+		foreach ( $counts as $key => $count ) {
+			if ( $count <= 0 ) {
+				continue;
+			}
+			$has_issues = true;
+			$url        = admin_url( 'admin.php?page=geoboost-fix&type=' . rawurlencode( $key ) );
 			printf(
-				'<tr><td class="geoboost-table__title"><a href="%s">%s</a></td>' .
-				'<td class="geoboost-table__meta">%s</td>' .
-				'<td class="geoboost-table__score"><span class="geoboost-pill geoboost-pill--%s">%d</span></td></tr>',
-				esc_url( (string) $post['edit'] ),
-				esc_html( (string) $post['title'] ),
-				esc_html( $when ),
-				esc_attr( $tier ),
-				(int) $post['score']
+				'<a class="geoboost-rec geoboost-rec--essential" href="%s"><span class="geoboost-rec__count">%s</span>' .
+				'<span class="geoboost-rec__body">%s</span><span class="geoboost-rec__arrow" aria-hidden="true">→</span></a>',
+				esc_url( $url ),
+				esc_html( number_format_i18n( (int) $count ) ),
+				esc_html( $labels[ $key ] )
 			);
 		}
-		echo '</tbody></table>';
+		if ( ! $has_issues ) {
+			echo '<p class="geoboost-empty">' .
+				esc_html__( 'All posts pass the essentials. Excellent.', 'geoboost' ) .
+				'</p>';
+		}
+		echo '</div>';
 		echo '</div>';
 	}
 
-	private function recommendations_card( array $counts, int $total_scored ): void {
+	private function recommendations_card( array $counts, int $total_posts ): void {
 		$labels = array(
-			'missing_summary'     => __( 'posts missing a Summary block', 'geoboost' ),
-			'missing_key_facts'   => __( 'posts missing Key Facts', 'geoboost' ),
-			'missing_faq'         => __( 'posts missing FAQ signals', 'geoboost' ),
-			'heading_hierarchy'   => __( 'posts with heading hierarchy issues', 'geoboost' ),
-			'word_count'          => __( 'posts outside 300–3000 word sweet spot', 'geoboost' ),
-			'missing_author_eeat' => __( 'posts with weak author E-E-A-T signals', 'geoboost' ),
-			'missing_featured'    => __( 'posts without a featured image', 'geoboost' ),
+			'missing_summary_block' => __( 'posts missing a Summary block', 'geoboost' ),
+			'missing_excerpt'       => __( 'posts missing an excerpt', 'geoboost' ),
+			'missing_key_facts'     => __( 'posts missing Key Facts', 'geoboost' ),
+			'missing_faq'           => __( 'posts missing FAQ signals', 'geoboost' ),
+			'missing_featured'      => __( 'posts without a featured image', 'geoboost' ),
+			'missing_outbound_link' => __( 'posts without outbound citations', 'geoboost' ),
+			'missing_internal_link' => __( 'posts without internal links', 'geoboost' ),
 		);
 		arsort( $counts );
 
@@ -252,7 +215,7 @@ final class View {
 			esc_html__( 'Biggest wins first', 'geoboost' )
 		);
 
-		if ( 0 === $total_scored ) {
+		if ( 0 === $total_posts ) {
 			echo '<p class="geoboost-empty geoboost-empty--tall">' .
 				esc_html__( 'No posts have been analyzed yet. Save any post to generate its GEO score.', 'geoboost' ) .
 				'</p>';
@@ -336,19 +299,6 @@ final class View {
 		);
 		echo '</ul>';
 		echo '</div>';
-	}
-
-	private function score_tier( int $score ): string {
-		if ( $score >= 80 ) {
-			return 'excellent';
-		}
-		if ( $score >= 60 ) {
-			return 'good';
-		}
-		if ( $score >= 40 ) {
-			return 'fair';
-		}
-		return 'poor';
 	}
 
 	/**

@@ -59,7 +59,7 @@ final class Plugin {
 			( new \GeoBoost\Admin\FixPage() )->register();
 			( new \GeoBoost\Admin\PostListFilter() )->register();
 			( new \GeoBoost\Admin\MetaBoxes\CustomJsonLdBox() )->register();
-			( new \GeoBoost\Admin\MetaBoxes\ScoreBox() )->register();
+			( new \GeoBoost\Admin\MetaBoxes\StatusBox() )->register();
 			( new \GeoBoost\Admin\MetaBoxes\LlmsTxtEntryBox() )->register();
 			( new \GeoBoost\Author\ProfileFields() )->register();
 		}

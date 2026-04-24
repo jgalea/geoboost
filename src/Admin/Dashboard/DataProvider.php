@@ -17,15 +17,17 @@ final class DataProvider {
 		if ( is_array( $cached ) ) {
 			return $cached;
 		}
-		$data = array(
-			'scores'          => $this->scores(),
-			'bots'            => $this->events( 'bot_crawl' ),
-			'referrals'       => $this->events( 'ai_referral' ),
-			'sparkline'       => $this->sparkline( 'bot_crawl' ),
-			'top_posts'       => $this->top_posts(),
-			'recommendations' => $this->recommendations(),
-			'health'          => $this->health(),
-			'generated_at'    => time(),
+		$issues = $this->issues();
+		$data   = array(
+			'essentials'               => $issues['essentials'],
+			'recommendations'          => $issues['recommendations'],
+			'total_posts'              => $issues['total_posts'],
+			'posts_passing_essentials' => $issues['posts_passing_essentials'],
+			'bots'                     => $this->events( 'bot_crawl' ),
+			'referrals'                => $this->events( 'ai_referral' ),
+			'sparkline'                => $this->sparkline( 'bot_crawl' ),
+			'health'                   => $this->health(),
+			'generated_at'             => time(),
 		);
 		set_transient( self::CACHE_KEY, $data, self::CACHE_TTL );
 		return $data;
@@ -33,44 +35,6 @@ final class DataProvider {
 
 	public static function flush(): void {
 		delete_transient( self::CACHE_KEY );
-	}
-
-	private function scores(): array {
-		global $wpdb;
-		$rows  = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			"SELECT CAST(meta_value AS UNSIGNED) AS score, COUNT(*) AS n
-			FROM {$wpdb->postmeta}
-			WHERE meta_key = '_geoboost_score'
-			GROUP BY meta_value"
-		);
-		$bins  = array(
-			'poor'      => 0,
-			'fair'      => 0,
-			'good'      => 0,
-			'excellent' => 0,
-		);
-		$total = 0;
-		$sum   = 0;
-		foreach ( (array) $rows as $r ) {
-			$score  = (int) $r->score;
-			$count  = (int) $r->n;
-			$total += $count;
-			$sum   += $score * $count;
-			if ( $score < 40 ) {
-				$bins['poor'] += $count;
-			} elseif ( $score < 60 ) {
-				$bins['fair'] += $count;
-			} elseif ( $score < 80 ) {
-				$bins['good'] += $count;
-			} else {
-				$bins['excellent'] += $count;
-			}
-		}
-		return array(
-			'bins'    => $bins,
-			'total'   => $total,
-			'average' => $total > 0 ? (int) round( $sum / $total ) : 0,
-		);
 	}
 
 	private function events( string $type ): array {
@@ -151,37 +115,6 @@ final class DataProvider {
 		return $points;
 	}
 
-	private function top_posts(): array {
-		global $wpdb;
-		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			"SELECT p.ID, p.post_title, CAST(pm.meta_value AS UNSIGNED) AS score, hm.meta_value AS history
-			FROM {$wpdb->posts} p
-			INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_geoboost_score'
-			LEFT JOIN {$wpdb->postmeta} hm ON hm.post_id = p.ID AND hm.meta_key = '_geoboost_score_history'
-			WHERE p.post_status = 'publish' AND p.post_type IN ('post','page')
-			ORDER BY score DESC LIMIT 10"
-		);
-		$out  = array();
-		foreach ( (array) $rows as $r ) {
-			$scanned = 0;
-			if ( ! empty( $r->history ) ) {
-				$hist = maybe_unserialize( $r->history );
-				if ( is_array( $hist ) && ! empty( $hist ) ) {
-					$last    = end( $hist );
-					$scanned = is_array( $last ) ? (int) ( $last['ts'] ?? 0 ) : 0;
-				}
-			}
-			$out[] = array(
-				'id'      => (int) $r->ID,
-				'title'   => (string) $r->post_title,
-				'score'   => (int) $r->score,
-				'edit'    => (string) get_edit_post_link( (int) $r->ID ),
-				'scanned' => $scanned,
-			);
-		}
-		return $out;
-	}
-
 	private function health(): array {
 		$detector = new Detector();
 		$seo      = $detector->active();
@@ -194,51 +127,81 @@ final class DataProvider {
 		);
 	}
 
-	private function recommendations(): array {
+	/**
+	 * @return array{
+	 *   essentials: array<string,int>,
+	 *   recommendations: array<string,int>,
+	 *   total_posts: int,
+	 *   posts_passing_essentials: int
+	 * }
+	 */
+	private function issues(): array {
 		global $wpdb;
-		$rows          = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			"SELECT pm.post_id, pm.meta_value AS details
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			"SELECT pm.post_id, pm.meta_value AS signals
 			FROM {$wpdb->postmeta} pm
 			INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-			WHERE pm.meta_key = '_geoboost_score_details'
+			WHERE pm.meta_key = '_geoboost_signals'
 			AND p.post_status = 'publish'
 			AND p.post_type IN ('post','page')"
 		);
-		$counts        = array(
-			'missing_summary'     => 0,
-			'missing_key_facts'   => 0,
-			'missing_faq'         => 0,
-			'heading_hierarchy'   => 0,
-			'word_count'          => 0,
-			'missing_author_eeat' => 0,
-			'missing_featured'    => 0,
+
+		$essential_map = array(
+			'missing_article_schema' => 'has_article_schema',
+			'heading_hierarchy'      => 'heading_hierarchy_ok',
+			'word_count'             => 'word_count_ok',
+			'missing_author_eeat'    => 'has_author_eeat',
 		);
-		$signal_map    = array(
-			'missing_summary'     => 'has_summary',
-			'missing_key_facts'   => 'has_key_facts',
-			'missing_faq'         => 'has_faq_signal',
-			'heading_hierarchy'   => 'heading_hierarchy_ok',
-			'word_count'          => 'word_count_ok',
-			'missing_author_eeat' => 'has_author_eeat',
-			'missing_featured'    => 'has_featured',
+		$rec_map       = array(
+			'missing_summary_block' => 'has_summary_block',
+			'missing_excerpt'       => 'has_excerpt',
+			'missing_key_facts'     => 'has_key_facts',
+			'missing_faq'           => 'has_faq_signal',
+			'missing_featured'      => 'has_featured',
+			'missing_outbound_link' => 'has_outbound_link',
+			'missing_internal_link' => 'has_internal_link',
 		);
+
+		$essentials      = array_fill_keys( array_keys( $essential_map ), 0 );
+		$recommendations = array_fill_keys( array_keys( $rec_map ), 0 );
+
 		$dismissals    = new Dismissals();
 		$dismissed_map = array();
-		foreach ( array_keys( $signal_map ) as $type ) {
+		foreach ( array_merge( array_keys( $essential_map ), array_keys( $rec_map ) ) as $type ) {
 			$dismissed_map[ $type ] = array_flip( $dismissals->dismissed_ids_for_type( $type ) );
 		}
+
+		$total                    = 0;
+		$posts_passing_essentials = 0;
 		foreach ( (array) $rows as $row ) {
+			++$total;
 			$post_id = (int) $row->post_id;
-			$d       = maybe_unserialize( $row->details );
+			$d       = maybe_unserialize( $row->signals );
 			if ( ! is_array( $d ) ) {
 				continue;
 			}
-			foreach ( $signal_map as $type => $signal_key ) {
-				if ( empty( $d[ $signal_key ] ) && ! isset( $dismissed_map[ $type ][ $post_id ] ) ) {
-					++$counts[ $type ];
+			$post_essential_failures = 0;
+			foreach ( $essential_map as $type => $signal ) {
+				if ( empty( $d[ $signal ] ) && ! isset( $dismissed_map[ $type ][ $post_id ] ) ) {
+					++$essentials[ $type ];
+					++$post_essential_failures;
+				}
+			}
+			if ( 0 === $post_essential_failures ) {
+				++$posts_passing_essentials;
+			}
+			foreach ( $rec_map as $type => $signal ) {
+				if ( empty( $d[ $signal ] ) && ! isset( $dismissed_map[ $type ][ $post_id ] ) ) {
+					++$recommendations[ $type ];
 				}
 			}
 		}
-		return $counts;
+
+		return array(
+			'essentials'               => $essentials,
+			'recommendations'          => $recommendations,
+			'total_posts'              => $total,
+			'posts_passing_essentials' => $posts_passing_essentials,
+		);
 	}
 }

@@ -7,13 +7,19 @@ final class FixPage {
 	private const PER_PAGE = 25;
 
 	private const SIGNALS = array(
-		'missing_summary'     => 'has_summary',
-		'missing_key_facts'   => 'has_key_facts',
-		'missing_faq'         => 'has_faq_signal',
-		'heading_hierarchy'   => 'heading_hierarchy_ok',
-		'word_count'          => 'word_count_ok',
-		'missing_author_eeat' => 'has_author_eeat',
-		'missing_featured'    => 'has_featured',
+		// Essentials
+		'missing_article_schema' => 'has_article_schema',
+		'heading_hierarchy'      => 'heading_hierarchy_ok',
+		'word_count'             => 'word_count_ok',
+		'missing_author_eeat'    => 'has_author_eeat',
+		// Recommendations
+		'missing_summary_block'  => 'has_summary_block',
+		'missing_excerpt'        => 'has_excerpt',
+		'missing_key_facts'      => 'has_key_facts',
+		'missing_faq'            => 'has_faq_signal',
+		'missing_featured'       => 'has_featured',
+		'missing_outbound_link'  => 'has_outbound_link',
+		'missing_internal_link'  => 'has_internal_link',
 	);
 
 	public function register(): void {
@@ -144,7 +150,6 @@ final class FixPage {
 		echo '<table class="geoboost-table geoboost-fix__table"><thead><tr>';
 		echo '<th>' . esc_html__( 'Entry', 'geoboost' ) . '</th>';
 		echo '<th class="geoboost-fix__th-type">' . esc_html__( 'Type', 'geoboost' ) . '</th>';
-		echo '<th class="geoboost-table__score">' . esc_html__( 'Score', 'geoboost' ) . '</th>';
 		echo '<th>' . esc_html__( 'Actions', 'geoboost' ) . '</th>';
 		echo '</tr></thead><tbody>';
 
@@ -153,8 +158,6 @@ final class FixPage {
 			if ( ! $post ) {
 				continue;
 			}
-			$score     = (int) get_post_meta( $post->ID, '_geoboost_score', true );
-			$tier      = $this->score_tier( $score );
 			$edit      = (string) get_edit_post_link( $post->ID );
 			$permalink = (string) get_permalink( $post->ID );
 
@@ -171,11 +174,6 @@ final class FixPage {
 				'<td class="geoboost-fix__td-type"><span class="geoboost-fix__type geoboost-fix__type--%s">%s</span></td>',
 				esc_attr( $post->post_type ),
 				esc_html( $type_label )
-			);
-			printf(
-				'<td class="geoboost-table__score"><span class="geoboost-pill geoboost-pill--%s">%d</span></td>',
-				esc_attr( $tier ),
-				(int) $score
 			);
 			echo '<td class="geoboost-fix__actions">';
 			if ( 'dismissed' === $view ) {
@@ -209,7 +207,7 @@ final class FixPage {
 			esc_html__( 'Open in editor', 'geoboost' )
 		);
 
-		if ( 'missing_summary' === $type ) {
+		if ( 'missing_summary_block' === $type ) {
 			$suggested = $this->suggested_summary( $post );
 			if ( '' !== $suggested ) {
 				$action_url = wp_nonce_url(
@@ -319,7 +317,7 @@ final class FixPage {
 
 		$text = $this->suggested_summary( $post );
 		if ( '' === $text ) {
-			$this->redirect_with_notice( 'missing_summary', 'no_text', $post_id );
+			$this->redirect_with_notice( 'missing_summary_block', 'no_text', $post_id );
 			return;
 		}
 
@@ -332,7 +330,7 @@ final class FixPage {
 			)
 		);
 
-		$this->redirect_with_notice( 'missing_summary', 'applied', $post_id );
+		$this->redirect_with_notice( 'missing_summary_block', 'applied', $post_id );
 	}
 
 	private function serialize_summary_block( string $paragraph ): string {
@@ -375,19 +373,6 @@ final class FixPage {
 			return $text;
 		}
 		return rtrim( mb_substr( $text, 0, $max - 1 ) ) . '…';
-	}
-
-	private function score_tier( int $score ): string {
-		if ( $score >= 80 ) {
-			return 'excellent';
-		}
-		if ( $score >= 60 ) {
-			return 'good';
-		}
-		if ( $score >= 40 ) {
-			return 'fair';
-		}
-		return 'poor';
 	}
 
 	private function render_pagination( string $type, int $paged, int $total, string $view = 'pending' ): void {
@@ -451,7 +436,7 @@ final class FixPage {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$post_id  = isset( $_GET['post'] ) ? (int) $_GET['post'] : 0;
 		$messages = array(
-			'applied'   => __( 'Summary block added. The post score will update next time it is saved — open it to review the text.', 'geoboost' ),
+			'applied'   => __( 'Summary block added. Open the post to review the text — status updates on save.', 'geoboost' ),
 			'no_text'   => __( 'This post has no excerpt and no visible text. Add an excerpt first, then re-try.', 'geoboost' ),
 			'dismissed' => __( 'Post dismissed. It won\'t appear in this recommendation until you restore it.', 'geoboost' ),
 			'restored'  => __( 'Post restored. It is back in the pending list.', 'geoboost' ),
@@ -476,11 +461,11 @@ final class FixPage {
 		global $wpdb;
 		$signal = self::SIGNALS[ $type ];
 		$rows   = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			"SELECT post_id, meta_value AS details FROM {$wpdb->postmeta} WHERE meta_key = '_geoboost_score_details'"
+			"SELECT post_id, meta_value AS signals FROM {$wpdb->postmeta} WHERE meta_key = '_geoboost_signals'"
 		);
 		$ids    = array();
 		foreach ( (array) $rows as $row ) {
-			$d = maybe_unserialize( $row->details );
+			$d = maybe_unserialize( $row->signals );
 			if ( ! is_array( $d ) ) {
 				continue;
 			}
@@ -517,54 +502,78 @@ final class FixPage {
 	 * @return array<string,array<string,string>>
 	 */
 	private function meta(): array {
-		$authors_url = admin_url( 'users.php' );
-		$media_url   = admin_url( 'upload.php' );
 		return array(
-			'missing_summary'     => array(
+			// Essentials
+			'missing_article_schema' => array(
+				'title'   => __( 'Missing Article schema', 'geoboost' ),
+				'summary' => __( 'No SEO plugin or GEOBoost output is emitting Article schema.', 'geoboost' ),
+				'why'     => __( 'Article schema tells AI engines what kind of content this is, who wrote it, and when. Without it, extraction is guesswork.', 'geoboost' ),
+				'how'     => __( 'Either enable GEOBoost\'s schema output for posts, or install/configure an SEO plugin (Yoast, RankMath, SEOPress, TSF) that emits Article schema.', 'geoboost' ),
+			),
+			'heading_hierarchy'      => array(
+				'title'   => __( 'Heading hierarchy issues', 'geoboost' ),
+				'summary' => __( 'Wonky heading levels confuse extractors.', 'geoboost' ),
+				'why'     => __( 'A clean h1 → h2 → h3 outline helps AI engines understand your document structure. Skipped levels make extraction unreliable.', 'geoboost' ),
+				'how'     => __( 'In the editor, use Heading 2 for sections, Heading 3 for subsections. Avoid jumping from H2 straight to H4.', 'geoboost' ),
+			),
+			'word_count'             => array(
+				'title'   => __( 'Content under 150 words', 'geoboost' ),
+				'summary' => __( 'Very thin posts lack depth for AI to confidently cite.', 'geoboost' ),
+				'why'     => __( 'AI engines need enough context to extract a quote with confidence. Under ~150 words there\'s rarely enough.', 'geoboost' ),
+				'how'     => __( 'Expand with examples, data, or a Key Facts block. If the topic is genuinely small, consider merging with a related post.', 'geoboost' ),
+			),
+			'missing_author_eeat'    => array(
+				'title'     => __( 'Weak author E-E-A-T signals', 'geoboost' ),
+				'summary'   => __( 'AI engines reward content with credentialed authors.', 'geoboost' ),
+				'why'       => __( 'Expertise, Experience, Authoritativeness, Trust (E-E-A-T) signals on the author profile feed Person schema, giving AI engines a reason to trust your byline.', 'geoboost' ),
+				'how'       => __( 'Complete the GEOBoost fields on each author profile: credentials and areas of expertise.', 'geoboost' ),
+				'cta_url'   => admin_url( 'users.php' ),
+				'cta_label' => __( 'Go to Users', 'geoboost' ),
+			),
+			// Recommendations
+			'missing_summary_block'  => array(
 				'title'   => __( 'Missing Summary block', 'geoboost' ),
 				'summary' => __( 'Add a TL;DR summary so AI engines can cite your post in one sentence.', 'geoboost' ),
-				'why'     => __( 'A compact Summary gives language models a ready-made answer to quote. Without one, they synthesize their own — which is slower, less accurate, and less likely to name your site as the source.', 'geoboost' ),
+				'why'     => __( 'A compact in-body Summary gives language models a ready-made answer to quote. Without one, they synthesize their own — which is slower, less accurate, and less likely to name your site as the source.', 'geoboost' ),
 				'how'     => __( 'Add the GEOBoost Summary block near the top of each post with a 1–3 sentence distillation of what the post is about. For posts with an excerpt, GEOBoost can apply a suggested summary below in one click; you can refine it later.', 'geoboost' ),
 			),
-			'missing_key_facts'   => array(
+			'missing_excerpt'        => array(
+				'title'   => __( 'Missing post excerpt', 'geoboost' ),
+				'summary' => __( 'The excerpt feeds Article schema description and llms.txt.', 'geoboost' ),
+				'why'     => __( 'WordPress falls back to an auto-trim of the post content when the excerpt is empty, but an explicit author-written excerpt is sharper and more accurate for AI consumption.', 'geoboost' ),
+				'how'     => __( 'In the editor sidebar, expand "Excerpt" and write 1–3 sentences summarizing the post.', 'geoboost' ),
+			),
+			'missing_key_facts'      => array(
 				'title'   => __( 'Missing Key Facts', 'geoboost' ),
 				'summary' => __( 'List 3–5 essential facts LLMs can lift out verbatim.', 'geoboost' ),
 				'why'     => __( 'AI engines prefer structured, bullet-list facts over prose. Key Facts make your post easier to extract and cite with high confidence.', 'geoboost' ),
-				'how'     => __( 'Open the editor and insert the GEOBoost Key Facts block. List 3–5 concrete, stand-alone facts (dates, numbers, claims, definitions).', 'geoboost' ),
+				'how'     => __( 'Open the editor and insert the GEOBoost Key Facts block. List 3–5 concrete, stand-alone facts.', 'geoboost' ),
 			),
-			'missing_faq'         => array(
+			'missing_faq'            => array(
 				'title'   => __( 'Missing FAQ signals', 'geoboost' ),
 				'summary' => __( 'FAQs map directly to how people ask AI questions.', 'geoboost' ),
 				'why'     => __( 'FAQs align with question-shaped queries AI engines receive. The FAQPage schema tells models that these Q/A pairs are authoritative.', 'geoboost' ),
-				'how'     => __( 'Use the GEOBoost FAQ block for 3–5 questions a real person would ask about the topic. Keep answers one paragraph.', 'geoboost' ),
+				'how'     => __( 'Use the GEOBoost FAQ block for 3–5 questions a real person would ask about the topic.', 'geoboost' ),
 			),
-			'heading_hierarchy'   => array(
-				'title'   => __( 'Heading hierarchy issues', 'geoboost' ),
-				'summary' => __( 'Wonky heading levels confuse extractors.', 'geoboost' ),
-				'why'     => __( 'A clean h1 → h2 → h3 outline helps AI engines understand your document structure. Skipped levels or multiple h1s make extraction unreliable.', 'geoboost' ),
-				'how'     => __( 'In the editor, use Heading 2 for sections, Heading 3 for subsections. Avoid jumping from H2 straight to H4.', 'geoboost' ),
-			),
-			'word_count'          => array(
-				'title'   => __( 'Outside the word-count sweet spot', 'geoboost' ),
-				'summary' => __( 'Posts under 300 or over 3,000 words are hard to cite cleanly.', 'geoboost' ),
-				'why'     => __( 'Very short posts lack depth for AI to confidently cite; very long posts dilute the signal. 300–3,000 words is the zone that tends to perform best for citation.', 'geoboost' ),
-				'how'     => __( 'Thin posts: expand with examples, data, or a Key Facts block. Long posts: split into focused parts, or add a strong Summary block near the top.', 'geoboost' ),
-			),
-			'missing_author_eeat' => array(
-				'title'     => __( 'Weak author E-E-A-T signals', 'geoboost' ),
-				'summary'   => __( 'AI engines reward content with credentialed authors.', 'geoboost' ),
-				'why'       => __( 'Expertise, Experience, Authoritativeness, Trust (E-E-A-T) signals on the author profile feed Person schema on author archives, giving AI engines a reason to trust your byline.', 'geoboost' ),
-				'how'       => __( 'Complete the GEOBoost fields on each author profile: credentials (e.g., "PhD in Epidemiology") and areas of expertise. 1–2 minutes per author.', 'geoboost' ),
-				'cta_url'   => $authors_url,
-				'cta_label' => __( 'Go to Users', 'geoboost' ),
-			),
-			'missing_featured'    => array(
+			'missing_featured'       => array(
 				'title'     => __( 'No featured image', 'geoboost' ),
 				'summary'   => __( 'Featured images feed Open Graph, Twitter, and Article schema.', 'geoboost' ),
-				'why'       => __( 'A featured image is used by social previews, Article schema, and some AI surfaces. Posts without one look weaker in every card-style preview.', 'geoboost' ),
-				'how'       => __( 'Open each post and set a featured image. If you lack a library of images, generate one or pick a relevant photo from a free source.', 'geoboost' ),
-				'cta_url'   => $media_url,
+				'why'       => __( 'A featured image is used by social previews, Article schema, and some AI surfaces.', 'geoboost' ),
+				'how'       => __( 'Open each post and set a featured image.', 'geoboost' ),
+				'cta_url'   => admin_url( 'upload.php' ),
 				'cta_label' => __( 'Media library', 'geoboost' ),
+			),
+			'missing_outbound_link'  => array(
+				'title'   => __( 'No outbound citations', 'geoboost' ),
+				'summary' => __( 'Citing external authorities boosts credibility for AI extraction.', 'geoboost' ),
+				'why'     => __( 'Articles that reference primary sources or known authorities are easier for AI engines to verify and trust.', 'geoboost' ),
+				'how'     => __( 'Add at least one link to an external authoritative source (primary research, official docs, news of record). Note: ThirstyAffiliates-style cloaked links on your own domain are not detected as outbound.', 'geoboost' ),
+			),
+			'missing_internal_link'  => array(
+				'title'   => __( 'No internal links', 'geoboost' ),
+				'summary' => __( 'Internal links help AI engines understand site topic clusters.', 'geoboost' ),
+				'why'     => __( 'A connected site is read as more authoritative than isolated pages.', 'geoboost' ),
+				'how'     => __( 'Link to at least one related post on your own site.', 'geoboost' ),
 			),
 		);
 	}
