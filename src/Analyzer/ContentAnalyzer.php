@@ -16,7 +16,8 @@ final class ContentAnalyzer {
 		return array(
 			'word_count'           => $words,
 			'word_count_ok'        => $words >= 300 && $words <= 3000,
-			'has_summary'          => false !== strpos( $html, 'wp-block-geoboost-summary' ) || false !== stripos( $html, 'itemprop="abstract"' ) || ! empty( $input['excerpt'] ),
+			'has_summary_block'    => false !== strpos( $html, 'wp-block-geoboost-summary' ) || false !== stripos( $html, 'itemprop="abstract"' ),
+			'has_excerpt'          => ! empty( $input['excerpt'] ),
 			'has_key_facts'        => false !== strpos( $html, 'wp-block-geoboost-key-facts' ) || ( false !== strpos( $html, '<dl' ) && false !== strpos( $html, '<dt' ) ),
 			'has_faq_signal'       => (bool) preg_match( '/<h[234][^>]*>(how|what|why|when|where|who)\b[^<]*\?/i', $html ) || false !== strpos( $html, 'wp-block-geoboost-faq' ),
 			'heading_hierarchy_ok' => $this->headings_ok( $html ),

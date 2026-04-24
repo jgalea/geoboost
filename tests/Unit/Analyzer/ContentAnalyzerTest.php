@@ -35,11 +35,27 @@ final class ContentAnalyzerTest extends TestCase {
 		$this->assertTrue( $r['has_faq_signal'] );
 	}
 
-	public function test_detects_summary_block_presence(): void {
+	public function test_detects_summary_block_only_via_block_marker(): void {
 		$input                 = $this->base;
 		$input['content_html'] = '<div class="wp-block-geoboost-summary"><p>x</p></div>';
 		$r                     = ( new ContentAnalyzer() )->analyze( $input );
-		$this->assertTrue( $r['has_summary'] );
+		$this->assertTrue( $r['has_summary_block'] );
+		$this->assertFalse( $r['has_excerpt'] );
+	}
+
+	public function test_detects_excerpt_independently_of_summary_block(): void {
+		$input            = $this->base;
+		$input['excerpt'] = 'A short summary.';
+		$r                = ( new ContentAnalyzer() )->analyze( $input );
+		$this->assertFalse( $r['has_summary_block'] );
+		$this->assertTrue( $r['has_excerpt'] );
+	}
+
+	public function test_summary_block_signal_also_accepts_itemprop_abstract(): void {
+		$input                 = $this->base;
+		$input['content_html'] = '<p itemprop="abstract">x</p>';
+		$r                     = ( new ContentAnalyzer() )->analyze( $input );
+		$this->assertTrue( $r['has_summary_block'] );
 	}
 
 	public function test_detects_key_facts_block_presence(): void {
