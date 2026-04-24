@@ -7,12 +7,12 @@ final class FixPage {
 	private const PER_PAGE = 25;
 
 	private const SIGNALS = array(
-		// Essentials
+		// Essentials.
 		'missing_article_schema' => 'has_article_schema',
 		'heading_hierarchy'      => 'heading_hierarchy_ok',
 		'word_count'             => 'word_count_ok',
 		'missing_author_eeat'    => 'has_author_eeat',
-		// Recommendations
+		// Recommendations.
 		'missing_summary_block'  => 'has_summary_block',
 		'missing_excerpt'        => 'has_excerpt',
 		'missing_key_facts'      => 'has_key_facts',
@@ -503,7 +503,7 @@ final class FixPage {
 	 */
 	private function meta(): array {
 		return array(
-			// Essentials
+			// Essentials.
 			'missing_article_schema' => array(
 				'title'   => __( 'Missing Article schema', 'geoboost' ),
 				'summary' => __( 'No SEO plugin or GEOBoost output is emitting Article schema.', 'geoboost' ),
@@ -530,7 +530,7 @@ final class FixPage {
 				'cta_url'   => admin_url( 'users.php' ),
 				'cta_label' => __( 'Go to Users', 'geoboost' ),
 			),
-			// Recommendations
+			// Recommendations.
 			'missing_summary_block'  => array(
 				'title'   => __( 'Missing Summary block', 'geoboost' ),
 				'summary' => __( 'Add a TL;DR summary so AI engines can cite your post in one sentence.', 'geoboost' ),
