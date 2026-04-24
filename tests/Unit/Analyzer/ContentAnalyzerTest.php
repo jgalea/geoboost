@@ -16,14 +16,23 @@ final class ContentAnalyzerTest extends TestCase {
 		'has_custom_jsonld'  => false,
 	);
 
-	public function test_flags_short_content(): void {
-		$r = ( new ContentAnalyzer() )->analyze( $this->base );
+	public function test_flags_under_150_words_as_not_ok(): void {
+		$input                 = $this->base;
+		$input['content_html'] = '<p>' . str_repeat( 'word ', 100 ) . '</p>';
+		$r                     = ( new ContentAnalyzer() )->analyze( $input );
 		$this->assertFalse( $r['word_count_ok'] );
 	}
 
-	public function test_flags_ok_content(): void {
+	public function test_passes_at_150_words(): void {
 		$input                 = $this->base;
-		$input['content_html'] = str_repeat( '<p>' . str_repeat( 'word ', 60 ) . '</p>', 10 );
+		$input['content_html'] = '<p>' . str_repeat( 'word ', 160 ) . '</p>';
+		$r                     = ( new ContentAnalyzer() )->analyze( $input );
+		$this->assertTrue( $r['word_count_ok'] );
+	}
+
+	public function test_long_content_no_longer_penalized(): void {
+		$input                 = $this->base;
+		$input['content_html'] = '<p>' . str_repeat( 'word ', 5000 ) . '</p>';
 		$r                     = ( new ContentAnalyzer() )->analyze( $input );
 		$this->assertTrue( $r['word_count_ok'] );
 	}

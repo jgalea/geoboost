@@ -15,7 +15,7 @@ final class ContentAnalyzer {
 
 		return array(
 			'word_count'           => $words,
-			'word_count_ok'        => $words >= 300 && $words <= 3000,
+			'word_count_ok'        => $words >= 150,
 			'has_summary_block'    => false !== strpos( $html, 'wp-block-geoboost-summary' ) || false !== stripos( $html, 'itemprop="abstract"' ),
 			'has_excerpt'          => ! empty( $input['excerpt'] ),
 			'has_key_facts'        => false !== strpos( $html, 'wp-block-geoboost-key-facts' ) || ( false !== strpos( $html, '<dl' ) && false !== strpos( $html, '<dt' ) ),
