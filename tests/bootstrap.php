@@ -93,3 +93,9 @@ if ( ! function_exists( 'wp_parse_url' ) ) {
         return parse_url( $url, $component );
     }
 }
+
+if ( ! function_exists( 'get_query_var' ) ) {
+    function get_query_var( string $name, $default = '' ) {
+        return $GLOBALS['geoboost_test_query_vars'][ $name ] ?? $default;
+    }
+}

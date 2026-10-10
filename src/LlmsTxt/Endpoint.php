@@ -17,6 +17,7 @@ final class Endpoint {
 		add_action( 'init', array( $this, 'add_rewrite' ) );
 		add_filter( 'query_vars', array( $this, 'add_query_var' ) );
 		add_action( 'template_redirect', array( $this, 'maybe_serve' ) );
+		add_filter( 'redirect_canonical', array( $this, 'skip_canonical_redirect' ) );
 		add_action( 'save_post', array( $this, 'on_save_post' ) );
 	}
 
@@ -27,6 +28,16 @@ final class Endpoint {
 	public function add_query_var( array $vars ): array {
 		$vars[] = self::QUERY_VAR;
 		return $vars;
+	}
+
+	/**
+	 * Stops WordPress adding a trailing slash (/llms.txt/) under slashed permalinks.
+	 *
+	 * @param string|false $redirect_url
+	 * @return string|false
+	 */
+	public function skip_canonical_redirect( $redirect_url ) {
+		return '1' === (string) get_query_var( self::QUERY_VAR ) ? false : $redirect_url;
 	}
 
 	public function maybe_serve(): void {
