@@ -7,6 +7,7 @@ final class SiteScanner {
 	public const HEADER = 'X-GEOBoost-Scan';
 
 	private const TOKEN_KEY  = 'geoboost_scan_token';
+	private const CHALLENGE  = '/cf-chl|challenge-platform|just a moment\.\.\.|captcha|access denied|attention required|are you a robot|verify you are human|password-protected|opening soon/i';
 	private const PAGE_CAP   = 1500000;
 	private const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 GEOBoostSiteScan';
 	private const LIVE_BOTS  = array(
@@ -114,13 +115,16 @@ final class SiteScanner {
 			? strlen( $llms['body'] )
 			: 0;
 
-		$bots = array();
+		$facts = ( new PageParser() )->parse( $page['body'] );
+		$bots  = array();
 		foreach ( self::LIVE_BOTS as $name => $ua ) {
-			$res    = $this->fetch( $page['final_url'], $ua, 6, 20000 );
+			// Same cap as the page, or a truncated copy reads as a thin page.
+			$res    = $this->fetch( $page['final_url'], $ua, 8, self::PAGE_CAP );
 			$bots[] = array(
-				'name'   => $name,
-				'status' => $res['status'],
-				'error'  => $res['error'],
+				'name'       => $name,
+				'status'     => $res['status'],
+				'error'      => $res['error'],
+				'challenged' => self::is_challenged( $page, (int) $facts['word_count'], $res ),
 			);
 		}
 
@@ -129,7 +133,7 @@ final class SiteScanner {
 			array(
 				'path'          => $path,
 				'headers'       => $page['headers'],
-				'facts'         => ( new PageParser() )->parse( $page['body'] ),
+				'facts'         => $facts,
 				'robots'        => $robots,
 				'robots_status' => $robots_res['status'],
 				'blog_public'   => $blog_public,
@@ -174,6 +178,34 @@ final class SiteScanner {
 		return null;
 	}
 
+	/**
+	 * A 200 can still be a challenge, password or consent page served only to bots.
+	 *
+	 * @param array{body:string,final_url:string} $page
+	 * @param array{status:int,body:string,final_url:string} $bot
+	 */
+	public static function is_challenged( array $page, int $page_words, array $bot ): bool {
+		if ( $bot['status'] < 200 || $bot['status'] >= 400 ) {
+			return false;
+		}
+		$page_url = wp_parse_url( $page['final_url'] );
+		$bot_url  = wp_parse_url( $bot['final_url'] );
+		if ( strtolower( $bot_url['host'] ?? '' ) !== strtolower( $page_url['host'] ?? '' ) ) {
+			return true;
+		}
+		if ( ( $bot_url['path'] ?? '/' ) !== ( $page_url['path'] ?? '/' ) && preg_match( '/login|password|consent|challenge|captcha/i', $bot['final_url'] ) ) {
+			return true;
+		}
+		if ( preg_match( self::CHALLENGE, substr( $bot['body'], 0, 50000 ) ) && ! preg_match( self::CHALLENGE, substr( $page['body'], 0, 50000 ) ) ) {
+			return true;
+		}
+		if ( $page_words < 200 ) {
+			return false;
+		}
+		$bot_words = (int) ( new PageParser() )->parse( $bot['body'] )['word_count'];
+		return $bot_words < $page_words * 0.3;
+	}
+
 	private function looks_like_html( string $body ): bool {
 		return 1 === preg_match( '/^\s*(<!doctype html|<html|<head|<body)/i', $body );
 	}
@@ -183,7 +215,7 @@ final class SiteScanner {
 	 */
 	private function fetch( string $url, string $ua, int $timeout, int $cap ): array {
 		if ( $this->fetcher ) {
-			$res = ( $this->fetcher )( $url, $ua );
+			$res = ( $this->fetcher )( $url, $ua, $cap );
 			return array(
 				'status'    => (int) ( $res['status'] ?? 0 ),
 				'body'      => (string) ( $res['body'] ?? '' ),
