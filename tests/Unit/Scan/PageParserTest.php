@@ -54,4 +54,21 @@ final class PageParserTest extends TestCase {
 		$this->assertTrue( $f['app_shell'] );
 		$this->assertSame( 0, $f['word_count'] );
 	}
+
+	public function test_commented_out_meta_and_schema_are_ignored(): void {
+		$f = ( new PageParser() )->parse(
+			'<html><head><!-- <meta name="robots" content="noindex"> -->'
+			. '<!-- <script type="application/ld+json">{"@type":"Organization"}</script> -->'
+			. '<!-- <link rel="canonical" href="https://example.com/old/"> --></head><body></body></html>'
+		);
+		$this->assertSame( '', $f['robots_meta'] );
+		$this->assertSame( array(), $f['schema_types'] );
+		$this->assertSame( '', $f['canonical'] );
+	}
+
+	public function test_attribute_containing_angle_bracket_is_not_truncated(): void {
+		$f = ( new PageParser() )->parse( '<html><head><meta property="og:title" content="Fast > slow"><meta name=\'robots\' content=\'a>b, noindex\'></head></html>' );
+		$this->assertSame( 'Fast > slow', $f['og']['og:title'] );
+		$this->assertStringContainsString( 'noindex', $f['robots_meta'] );
+	}
 }

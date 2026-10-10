@@ -8,7 +8,9 @@ final class PageParser {
 	/**
 	 * @return array<string,mixed>
 	 */
-	public function parse( string $html ): array {
+	public function parse( string $raw ): array {
+		// Commented-out markup is inactive, so it must not count as metadata.
+		$html  = $this->strip_comments( $raw );
 		$metas = $this->tags( $html, 'meta' );
 
 		$robots_meta = array();
@@ -175,7 +177,10 @@ final class PageParser {
 	 * @return array<int,array<string,string>>
 	 */
 	private function tags( string $html, string $name ): array {
-		preg_match_all( '#<' . $name . '\b[^>]*>#i', $html, $m );
+		// Quote-aware, so an attribute value containing ">" doesn't end the tag.
+		if ( ! preg_match_all( '#<' . $name . '\b(?:[^>"\']|"[^"]*"|\'[^\']*\')*>#i', $html, $m ) ) {
+			return array();
+		}
 		return array_map( array( $this, 'attrs' ), $m[0] );
 	}
 
@@ -195,9 +200,14 @@ final class PageParser {
 		return $attrs;
 	}
 
+	private function strip_comments( string $html ): string {
+		$out = preg_replace( '#<!--.*?-->#s', ' ', $html );
+		return null === $out ? $html : $out;
+	}
+
 	private function strip_non_content( string $html ): string {
 		$out = preg_replace(
-			array( '#<!--.*?-->#s', '#<(script|style|noscript|svg|template|iframe)\b.*?</\1\s*>#is' ),
+			'#<(script|style|noscript|svg|template|iframe)\b.*?</\1\s*>#is',
 			' ',
 			$html
 		);
