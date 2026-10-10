@@ -59,4 +59,20 @@ final class AiBotControllerTest extends TestCase {
 
         $this->assertStringNotContainsString( 'EvilBot', $output );
     }
+
+    public function test_every_known_bot_has_a_kind(): void {
+        foreach ( AiBotController::known_bots() as $bot ) {
+            $this->assertContains( $bot['kind'], [ 'search', 'training' ], $bot['user_agent'] );
+        }
+    }
+
+    public function test_blocked_of_kind_splits_search_from_training(): void {
+        $blocked = [ 'GPTBot', 'OAI-SearchBot', 'PerplexityBot', 'EvilBot' ];
+
+        $search   = array_column( AiBotController::blocked_of_kind( $blocked, 'search' ), 'user_agent' );
+        $training = array_column( AiBotController::blocked_of_kind( $blocked, 'training' ), 'user_agent' );
+
+        $this->assertSame( [ 'OAI-SearchBot', 'PerplexityBot' ], $search );
+        $this->assertSame( [ 'GPTBot' ], $training );
+    }
 }

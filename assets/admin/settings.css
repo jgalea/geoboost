@@ -212,3 +212,22 @@
 	font-size: 12px;
 	margin-top: 2px;
 }
+
+.geoboost-admin .geoboost-bot-list__kind {
+	display: block;
+	margin-top: 4px;
+	font-size: 11px;
+	color: var(--gb-text-subtle);
+}
+
+.geoboost-admin .geoboost-bot-list__item--search .geoboost-bot-list__kind {
+	color: var(--gb-down);
+}
+
+.geoboost-admin .geoboost-bot-list__item--search input:checked + .geoboost-bot-list__text .geoboost-bot-list__kind {
+	font-weight: 600;
+}
+
+.geoboost-admin .geoboost-bot-list__item--search:has(input:checked) {
+	border-color: var(--gb-poor);
+}

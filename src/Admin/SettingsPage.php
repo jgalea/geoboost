@@ -12,6 +12,7 @@ final class SettingsPage {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_notices', array( $this, 'maybe_show_override_notice' ) );
+		add_action( 'admin_notices', array( $this, 'maybe_show_blocked_bots_notice' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
@@ -291,15 +292,54 @@ final class SettingsPage {
 		$blocked = (array) get_option( 'geoboost_blocked_ai_bots', array() );
 		echo '<div class="geoboost-bot-list">';
 		foreach ( AiBotController::known_bots() as $bot ) {
+			$search = 'search' === $bot['kind'];
 			printf(
-				'<label><input type="checkbox" name="geoboost_blocked_ai_bots[]" value="%1$s" %2$s /><span class="geoboost-bot-list__text"><span class="geoboost-bot-list__label">%3$s</span><span class="geoboost-bot-list__purpose">%4$s</span></span></label>',
+				'<label class="geoboost-bot-list__item--%1$s"><input type="checkbox" name="geoboost_blocked_ai_bots[]" value="%2$s" %3$s /><span class="geoboost-bot-list__text"><span class="geoboost-bot-list__label">%4$s</span><span class="geoboost-bot-list__purpose">%5$s</span><span class="geoboost-bot-list__kind">%6$s</span></span></label>',
+				esc_attr( $bot['kind'] ),
 				esc_attr( $bot['user_agent'] ),
 				checked( in_array( $bot['user_agent'], $blocked, true ), true, false ),
 				esc_html( $bot['label'] ),
-				esc_html( $bot['purpose'] )
+				esc_html( $bot['purpose'] ),
+				$search ? esc_html__( 'Live AI answers: blocking removes you from them', 'geoboost' ) : esc_html__( 'Model training', 'geoboost' )
 			);
 		}
 		echo '</div>';
 		echo '<p class="description">' . esc_html__( 'Selected bots will be added to robots.txt with Disallow: / directives.', 'geoboost' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Search crawlers fetch your pages to cite them in live answers in ChatGPT search, Perplexity and similar tools. Block one and your site stops appearing in that tool\'s answers. Training crawlers collect data for future models; blocking them is a business choice and doesn\'t affect live answers.', 'geoboost' ) . '</p>';
+	}
+
+	public function maybe_show_blocked_bots_notice(): void {
+		$screen = get_current_screen();
+		if ( ! $screen || 'geoboost_page_geoboost-settings' !== $screen->id ) {
+			return;
+		}
+		$blocked  = (array) get_option( 'geoboost_blocked_ai_bots', array() );
+		$search   = AiBotController::blocked_of_kind( $blocked, 'search' );
+		$training = AiBotController::blocked_of_kind( $blocked, 'training' );
+
+		if ( $search ) {
+			printf(
+				'<div class="notice notice-warning"><p><strong>%s</strong><br>%s</p></div>',
+				esc_html__( 'GEOBoost: you are blocking AI search crawlers', 'geoboost' ),
+				esc_html(
+					sprintf(
+						/* translators: %s: comma-separated list of crawler names */
+						__( 'robots.txt now tells %s to stay away. These crawlers fetch pages to cite in live AI answers, so your site will drop out of those answers. Untick them below unless that is what you want.', 'geoboost' ),
+						implode( ', ', array_column( $search, 'label' ) )
+					)
+				)
+			);
+		} elseif ( $training ) {
+			printf(
+				'<div class="notice notice-info"><p>%s</p></div>',
+				esc_html(
+					sprintf(
+						/* translators: %s: comma-separated list of crawler names */
+						__( 'GEOBoost is blocking %s. These are training crawlers, so live AI answers are unaffected, but future models will know less about your site.', 'geoboost' ),
+						implode( ', ', array_column( $training, 'label' ) )
+					)
+				)
+			);
+		}
 	}
 }
