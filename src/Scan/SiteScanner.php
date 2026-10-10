@@ -21,6 +21,12 @@ final class SiteScanner {
 
 	private string $token = '';
 
+	/** @var array{host:string,port:int|null} */
+	private array $scope = array(
+		'host' => '',
+		'port' => null,
+	);
+
 	public function set_fetcher( callable $fetcher ): void {
 		$this->fetcher = $fetcher;
 	}
@@ -85,19 +91,27 @@ final class SiteScanner {
 	 * @return array<string,mixed>
 	 */
 	public function scan( string $url, bool $blog_public ): array {
+		$start       = wp_parse_url( $url );
+		$this->scope = array(
+			'host' => strtolower( (string) ( $start['host'] ?? '' ) ),
+			'port' => $start['port'] ?? null,
+		);
+
 		$page = $this->fetch( $url, self::BROWSER_UA, 10, self::PAGE_CAP );
 		if ( $page['status'] < 200 || $page['status'] >= 300 || '' === $page['body'] ) {
 			return array(
 				'url'        => $url,
 				'scanned_at' => time(),
-				'error'      => $page['status']
+				'error'      => $page['status'] >= 300 && $page['status'] < 400 && '' !== $page['error']
+					? $page['error']
+					: ( $page['status']
 					/* translators: %d: HTTP status code */
 					? sprintf( __( 'The page answered with HTTP %d, so there was nothing to scan.', 'geoboost' ), $page['status'] )
 					: sprintf(
 						/* translators: %s: error message */
 						__( 'Your server couldn\'t load its own page (%s). Some hosts block requests a site makes to itself; Tools > Site Health reports this as a loopback problem.', 'geoboost' ),
 						'' !== $page['error'] ? $page['error'] : __( 'no response', 'geoboost' )
-					),
+					) ),
 			);
 		}
 
@@ -211,17 +225,73 @@ final class SiteScanner {
 	}
 
 	/**
+	 * Follows up to five redirects by hand, refusing any hop that leaves the
+	 * scanned site's host and port or isn't http(s).
+	 *
 	 * @return array{status:int,body:string,headers:array<string,string>,final_url:string,error:string}
 	 */
 	private function fetch( string $url, string $ua, int $timeout, int $cap ): array {
+		for ( $hop = 0; ; $hop++ ) {
+			$res      = $this->request( $url, $ua, $timeout, $cap );
+			$location = $res['headers']['location'] ?? '';
+			if ( $res['status'] < 300 || $res['status'] >= 400 || '' === $location ) {
+				return $res + array( 'final_url' => $url );
+			}
+
+			$next = self::resolve_location( $location, $url );
+			if ( $hop >= 5 ) {
+				$res['error'] = __( 'Too many redirects.', 'geoboost' );
+			} elseif ( ! $this->in_scope( $next ) ) {
+				/* translators: %s: redirect target URL */
+				$res['error'] = sprintf( __( 'Redirect to %s not followed because it leaves this site.', 'geoboost' ), $next );
+			} else {
+				$url = $next;
+				continue;
+			}
+			$res['body'] = '';
+			return $res + array( 'final_url' => $next );
+		}
+	}
+
+	private function in_scope( string $url ): bool {
+		$parts = wp_parse_url( $url );
+		return is_array( $parts )
+			&& in_array( strtolower( $parts['scheme'] ?? '' ), array( 'http', 'https' ), true )
+			&& ! isset( $parts['user'] ) && ! isset( $parts['pass'] )
+			&& strtolower( $parts['host'] ?? '' ) === $this->scope['host']
+			&& ( $parts['port'] ?? null ) === $this->scope['port'];
+	}
+
+	private static function resolve_location( string $location, string $base ): string {
+		if ( preg_match( '#^[a-z][a-z0-9+.-]*:#i', $location ) ) {
+			return $location;
+		}
+		$b      = wp_parse_url( $base );
+		$scheme = $b['scheme'] ?? 'https';
+		if ( 0 === strpos( $location, '//' ) ) {
+			return $scheme . ':' . $location;
+		}
+		$origin = $scheme . '://' . ( $b['host'] ?? '' ) . ( isset( $b['port'] ) ? ':' . $b['port'] : '' );
+		if ( '' !== $location && '/' === $location[0] ) {
+			return $origin . $location;
+		}
+		$dir = (string) preg_replace( '#/[^/]*$#', '/', $b['path'] ?? '/' );
+		return $origin . ( '' !== $dir ? $dir : '/' ) . $location;
+	}
+
+	/**
+	 * One request, no redirects.
+	 *
+	 * @return array{status:int,body:string,headers:array<string,string>,error:string}
+	 */
+	private function request( string $url, string $ua, int $timeout, int $cap ): array {
 		if ( $this->fetcher ) {
 			$res = ( $this->fetcher )( $url, $ua, $cap );
 			return array(
-				'status'    => (int) ( $res['status'] ?? 0 ),
-				'body'      => (string) ( $res['body'] ?? '' ),
-				'headers'   => (array) ( $res['headers'] ?? array() ),
-				'final_url' => (string) ( $res['final_url'] ?? $url ),
-				'error'     => (string) ( $res['error'] ?? '' ),
+				'status'  => (int) ( $res['status'] ?? 0 ),
+				'body'    => (string) ( $res['body'] ?? '' ),
+				'headers' => array_change_key_case( (array) ( $res['headers'] ?? array() ) ),
+				'error'   => (string) ( $res['error'] ?? '' ),
 			);
 		}
 
@@ -229,11 +299,11 @@ final class SiteScanner {
 		if ( '' !== $this->token ) {
 			$headers[ self::HEADER ] = $this->token;
 		}
-		$response = wp_remote_get(
+		$response = wp_safe_remote_get(
 			$url,
 			array(
 				'timeout'             => $timeout,
-				'redirection'         => 5,
+				'redirection'         => 0,
 				'user-agent'          => $ua,
 				'headers'             => $headers,
 				'limit_response_size' => $cap,
@@ -243,18 +313,13 @@ final class SiteScanner {
 
 		if ( is_wp_error( $response ) ) {
 			return array(
-				'status'    => 0,
-				'body'      => '',
-				'headers'   => array(),
-				'final_url' => $url,
-				'error'     => $response->get_error_message(),
+				'status'  => 0,
+				'body'    => '',
+				'headers' => array(),
+				'error'   => $response->get_error_message(),
 			);
 		}
 
-		$final = $url;
-		if ( isset( $response['http_response'] ) && method_exists( $response['http_response'], 'get_response_object' ) ) {
-			$final = (string) $response['http_response']->get_response_object()->url;
-		}
 		$raw = wp_remote_retrieve_headers( $response );
 		if ( is_object( $raw ) && method_exists( $raw, 'getAll' ) ) {
 			$raw = $raw->getAll();
@@ -265,11 +330,10 @@ final class SiteScanner {
 		}
 
 		return array(
-			'status'    => (int) wp_remote_retrieve_response_code( $response ),
-			'body'      => (string) wp_remote_retrieve_body( $response ),
-			'headers'   => $lower,
-			'final_url' => $final,
-			'error'     => '',
+			'status'  => (int) wp_remote_retrieve_response_code( $response ),
+			'body'    => (string) wp_remote_retrieve_body( $response ),
+			'headers' => $lower,
+			'error'   => '',
 		);
 	}
 }
