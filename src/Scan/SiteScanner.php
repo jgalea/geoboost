@@ -9,7 +9,7 @@ final class SiteScanner {
 	private const TOKEN_KEY  = 'geoboost_scan_token';
 	private const CHALLENGE  = '/cf-chl|challenge-platform|just a moment\.\.\.|captcha|access denied|attention required|are you a robot|verify you are human|password-protected|opening soon/i';
 	private const PAGE_CAP   = 1500000;
-	private const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 GEOBoostSiteScan';
+	private const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36 GEOBoostSiteScan';
 	private const LIVE_BOTS  = array(
 		'GPTBot'        => 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; GPTBot/1.1; +https://openai.com/gptbot',
 		'ClaudeBot'     => 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@anthropic.com)',
