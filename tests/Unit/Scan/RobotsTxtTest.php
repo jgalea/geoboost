@@ -96,4 +96,59 @@ final class RobotsTxtTest extends TestCase {
 		$r = new RobotsTxt( "Sitemap: https://example.com/a.xml\nUser-agent: *\nDisallow:\nsitemap: https://example.com/b.xml\nSitemap:\n" );
 		$this->assertSame( array( 'https://example.com/a.xml', 'https://example.com/b.xml' ), $r->sitemaps() );
 	}
+
+	public function test_trailing_star_does_not_add_specificity(): void {
+		$r = new RobotsTxt( "User-agent: *\nDisallow: /foo*\nAllow: /foo\n" );
+		$this->assertTrue( $r->is_allowed( 'GPTBot', '/foo' ) );
+	}
+
+	public function test_hostile_pattern_without_match_finishes_fast(): void {
+		$r     = new RobotsTxt( "User-agent: *\nDisallow: /" . str_repeat( '*a', 200 ) . "b\n" );
+		$start = microtime( true );
+		$this->assertTrue( $r->is_allowed( 'GPTBot', '/' . str_repeat( 'a', 5000 ) ) );
+		$this->assertLessThan( 1.0, microtime( true ) - $start );
+	}
+
+	public function test_hostile_pattern_that_matches_is_not_lost_to_backtrack_limit(): void {
+		$r     = new RobotsTxt( "User-agent: *\nDisallow: /" . str_repeat( '*a', 30 ) . "*b\n" );
+		$start = microtime( true );
+		$this->assertFalse( $r->is_allowed( 'GPTBot', '/' . str_repeat( 'a', 2000 ) . 'b' ) );
+		$this->assertLessThan( 1.0, microtime( true ) - $start );
+	}
+
+	public function test_percent_escapes_of_unreserved_characters_are_normalized(): void {
+		$r = new RobotsTxt( "User-agent: *\nDisallow: /%7Efoo\nDisallow: /~bar\nDisallow: /a%2fb\n" );
+		$this->assertFalse( $r->is_allowed( 'GPTBot', '/~foo' ) );
+		$this->assertFalse( $r->is_allowed( 'GPTBot', '/%7ebar' ) );
+		$this->assertFalse( $r->is_allowed( 'GPTBot', '/a%2Fb' ) );
+		$this->assertTrue( $r->is_allowed( 'GPTBot', '/a/b' ) );
+	}
+
+	public function test_over_long_rules_are_skipped_and_flagged(): void {
+		$r = new RobotsTxt( "User-agent: *\nDisallow: /" . str_repeat( 'x', 600 ) . "\n" );
+		$this->assertTrue( $r->is_truncated() );
+		$this->assertNull( $r->verdicts( array( 'GPTBot' ), '/' ) );
+	}
+
+	public function test_rules_past_the_cap_are_skipped_and_flagged(): void {
+		$r = new RobotsTxt( "User-agent: *\n" . str_repeat( "Disallow: /filler\n", 2000 ) . "Disallow: /\n" );
+		$this->assertTrue( $r->is_truncated() );
+		$this->assertTrue( $r->is_allowed( 'GPTBot', '/page' ) );
+		$this->assertFalse( ( new RobotsTxt( "User-agent: *\nDisallow: /\n" ) )->is_truncated() );
+	}
+
+	public function test_verdicts_give_up_when_the_step_budget_runs_out(): void {
+		$text  = "User-agent: *\n" . str_repeat( 'Disallow: /' . str_repeat( '*a', 200 ) . "b\n", 600 );
+		$r     = new RobotsTxt( $text );
+		$start = microtime( true );
+		$this->assertNull( $r->verdicts( array( 'GPTBot', 'CCBot' ), '/' . str_repeat( 'a', 5000 ) ) );
+		$this->assertLessThan( 2.0, microtime( true ) - $start );
+		$this->assertSame( array( 'GPTBot' => true ), ( new RobotsTxt( "User-agent: *\nDisallow: /x\n" ) )->verdicts( array( 'GPTBot' ), '/' ) );
+	}
+
+	public function test_query_string_is_part_of_the_match(): void {
+		$r = new RobotsTxt( "User-agent: *\nDisallow: /*?lang=\n" );
+		$this->assertFalse( $r->is_allowed( 'GPTBot', '/?lang=en' ) );
+		$this->assertTrue( $r->is_allowed( 'GPTBot', '/' ) );
+	}
 }

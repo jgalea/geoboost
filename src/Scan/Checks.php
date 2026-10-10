@@ -95,7 +95,7 @@ final class Checks {
 	 *   robots:?RobotsTxt,
 	 *   robots_status:int,
 	 *   blog_public:bool,
-	 *   bots:array<int,array{name:string,status:int,error:string}>,
+	 *   bots:array<int,array{name:string,status:int,error:string,challenged?:bool}>,
 	 *   sitemap:?string,
 	 *   llms_length:int
 	 * } $in
@@ -116,7 +116,8 @@ final class Checks {
 			);
 		};
 
-		$robots = $in['robots'];
+		$robots   = $in['robots'];
+		$verdicts = null === $robots ? null : $robots->verdicts( array_column( self::robots_agents(), 'token' ), $in['path'] );
 		if ( null === $robots ) {
 			$missing = 404 === $in['robots_status'];
 			$add(
@@ -134,13 +135,23 @@ final class Checks {
 					),
 				__( 'Make /robots.txt return plain text with a 200 status. Crawlers that get errors may back off your whole site.', 'geoboost' )
 			);
+		} elseif ( null === $verdicts ) {
+			$add(
+				'robots',
+				'access',
+				2,
+				__( 'robots.txt lets AI crawlers in', 'geoboost' ),
+				'warn',
+				__( 'robots.txt is too long or complex to evaluate reliably.', 'geoboost' ),
+				__( 'Simplify robots.txt: keep rules short, avoid long wildcard patterns, and give each AI crawler a plain Allow or Disallow line.', 'geoboost' )
+			);
 		} else {
 			$blocked = array(
 				'search'   => array(),
 				'training' => array(),
 			);
 			foreach ( self::robots_agents() as $agent ) {
-				if ( ! $robots->is_allowed( $agent['token'], $in['path'] ) ) {
+				if ( ! $verdicts[ $agent['token'] ] ) {
 					$blocked[ $agent['kind'] ][] = $agent;
 				}
 			}
@@ -396,13 +407,16 @@ final class Checks {
 	}
 
 	/**
-	 * @param array<int,array{name:string,status:int,error:string}> $bots
+	 * @param array<int,array{name:string,status:int,error:string,challenged?:bool}> $bots
 	 */
 	private function live_bots_check( array $bots, callable $add ): void {
 		$refused = array();
 		$failed  = array();
 		foreach ( $bots as $b ) {
-			if ( in_array( $b['status'], array( 401, 403, 429, 503 ), true ) ) {
+			if ( ! empty( $b['challenged'] ) ) {
+				/* translators: %s: crawler name */
+				$refused[] = sprintf( __( '%s (got a challenge or a different page)', 'geoboost' ), $b['name'] );
+			} elseif ( in_array( $b['status'], array( 401, 403, 429, 503 ), true ) ) {
 				/* translators: 1: crawler name, 2: HTTP status code */
 				$refused[] = sprintf( __( '%1$s (HTTP %2$d)', 'geoboost' ), $b['name'], $b['status'] );
 			} elseif ( $b['status'] < 200 || $b['status'] >= 400 ) {
@@ -417,7 +431,7 @@ final class Checks {
 		if ( $refused ) {
 			$summary = sprintf(
 				/* translators: %s: list of crawlers with status codes */
-				__( 'Requests identifying as %s were refused.', 'geoboost' ),
+				__( 'Requests identifying as %s didn\'t get your page.', 'geoboost' ),
 				implode( ', ', $refused )
 			);
 		} elseif ( $failed ) {

@@ -188,4 +188,11 @@ final class ChecksTest extends TestCase {
 			$this->assertSame( 'training', $kinds[ $t ], $t );
 		}
 	}
+
+	public function test_unevaluable_robots_warns_instead_of_guessing(): void {
+		$robots = new RobotsTxt( "User-agent: OAI-SearchBot\nDisallow: /" . str_repeat( 'x', 600 ) . "\n" );
+		$checks = $this->by_id( ( new Checks() )->build( $this->input( array( 'robots' => $robots ) ) ) );
+		$this->assertSame( 'warn', $checks['robots']['status'] );
+		$this->assertArrayNotHasKey( 'robots-search', $checks );
+	}
 }

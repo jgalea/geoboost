@@ -3,15 +3,23 @@ namespace GeoBoost\Scan;
 
 final class RobotsTxt {
 
+	private const MAX_RULE_LENGTH = 512;
+	private const MAX_RULES       = 2000;
+	private const MAX_PATH_LENGTH = 2048;
+	private const STEP_BUDGET     = 2000000;
+
 	/** @var array<int,array{agents:array<int,string>,rules:array<int,array{allow:bool,path:string}>}> */
 	private array $groups = array();
 
 	/** @var array<int,string> */
 	private array $sitemaps = array();
 
+	private bool $truncated = false;
+
 	public function __construct( string $text ) {
 		$current        = null;
 		$last_was_agent = false;
+		$rule_count     = 0;
 
 		foreach ( preg_split( '/\r\n|\r|\n/', $text ) as $raw ) {
 			$line = trim( (string) preg_replace( '/#.*$/', '', $raw ) );
@@ -38,10 +46,15 @@ final class RobotsTxt {
 				if ( null === $current || ( 'disallow' === $key && '' === $value ) ) {
 					continue;
 				}
+				if ( $rule_count >= self::MAX_RULES || strlen( $value ) > self::MAX_RULE_LENGTH ) {
+					$this->truncated = true;
+					continue;
+				}
 				$this->groups[ $current ]['rules'][] = array(
 					'allow' => 'allow' === $key,
-					'path'  => $value,
+					'path'  => self::normalize_path( $value ),
 				);
+				++$rule_count;
 			} elseif ( 'sitemap' === $key ) {
 				if ( '' !== $value ) {
 					$this->sitemaps[] = $value;
@@ -60,10 +73,45 @@ final class RobotsTxt {
 	}
 
 	/**
-	 * Google-style matching: groups naming the crawler win over "*", and the
-	 * longest matching pattern wins, with Allow winning a tie.
+	 * True when rules were skipped for being too long or too many, so verdicts
+	 * can't be trusted.
 	 */
-	public function is_allowed( string $agent, string $path ): bool {
+	public function is_truncated(): bool {
+		return $this->truncated;
+	}
+
+	/**
+	 * Verdicts for several crawlers under one shared step budget.
+	 *
+	 * @param array<int,string> $agents
+	 * @return array<string,bool>|null Null when the file is truncated or too complex to evaluate.
+	 */
+	public function verdicts( array $agents, string $path ): ?array {
+		if ( $this->truncated ) {
+			return null;
+		}
+		$budget = self::STEP_BUDGET;
+		$out    = array();
+		try {
+			foreach ( $agents as $agent ) {
+				$out[ $agent ] = $this->is_allowed( $agent, $path, $budget );
+			}
+		} catch ( RobotsTooComplex $e ) {
+			return null;
+		}
+		return $out;
+	}
+
+	/**
+	 * Google-style matching: groups naming the crawler win over "*", and the
+	 * longest matching pattern wins, with Allow winning a tie. $path includes
+	 * the query string.
+	 */
+	public function is_allowed( string $agent, string $path, ?int &$budget = null ): bool {
+		if ( null === $budget ) {
+			$budget = self::STEP_BUDGET;
+		}
+		$path     = self::normalize_path( substr( $path, 0, self::MAX_PATH_LENGTH ) );
 		$token    = strtolower( $agent );
 		$specific = array();
 		$wildcard = array();
@@ -79,10 +127,11 @@ final class RobotsTxt {
 		$best = null;
 		foreach ( ( $specific ? $specific : $wildcard ) as $group ) {
 			foreach ( $group['rules'] as $rule ) {
-				if ( ! self::pattern_matches( $rule['path'], $path ) ) {
+				if ( ! self::pattern_matches( $rule['path'], $path, $budget ) ) {
 					continue;
 				}
-				$len = strlen( $rule['path'] );
+				// A trailing "*" matches anything, so it adds no specificity.
+				$len = strlen( rtrim( $rule['path'], '*' ) );
 				if ( null === $best || $len > $best['len'] || ( $len === $best['len'] && $rule['allow'] ) ) {
 					$best = array(
 						'len'   => $len,
@@ -95,15 +144,59 @@ final class RobotsTxt {
 		return null === $best || $best['allow'];
 	}
 
-	private static function pattern_matches( string $pattern, string $path ): bool {
-		$anchored = '' !== $pattern && '$' === substr( $pattern, -1 );
-		$body     = $anchored ? substr( $pattern, 0, -1 ) : $pattern;
-		$parts    = array_map(
-			static function ( string $part ): string {
-				return preg_quote( $part, '#' );
+	/**
+	 * Decodes percent-escapes of unreserved characters so "/%7Efoo" and "/~foo"
+	 * compare equal; other escapes are uppercased.
+	 */
+	public static function normalize_path( string $path ): string {
+		return (string) preg_replace_callback(
+			'/%([0-9a-f]{2})/i',
+			static function ( array $m ): string {
+				$c = chr( (int) hexdec( $m[1] ) );
+				return preg_match( '/[A-Za-z0-9\-._~]/', $c ) ? $c : strtoupper( $m[0] );
 			},
-			explode( '*', $body )
+			$path
 		);
-		return 1 === preg_match( '#^' . implode( '.*', $parts ) . ( $anchored ? '$' : '' ) . '#', $path );
+	}
+
+	/**
+	 * Wildcard match ("*" is any run, a trailing "$" anchors the end) that only
+	 * backtracks to the most recent star, so hostile patterns stay linear and
+	 * can't hit the PCRE backtrack limit. Each step spends one unit of $budget.
+	 *
+	 * @throws RobotsTooComplex When the budget runs out.
+	 */
+	public static function pattern_matches( string $pattern, string $path, int &$budget ): bool {
+		$anchored = '' !== $pattern && '$' === substr( $pattern, -1 );
+		$pat      = $anchored ? substr( $pattern, 0, -1 ) : $pattern;
+		$pat_len  = strlen( $pat );
+		$path_len = strlen( $path );
+		$p        = 0;
+		$s        = 0;
+		$star     = -1;
+		$mark     = 0;
+		while ( $s < $path_len ) {
+			if ( --$budget < 0 ) {
+				throw new RobotsTooComplex( 'robots.txt is too complex to evaluate' );
+			}
+			if ( $p < $pat_len && '*' === $pat[ $p ] ) {
+				$star = $p++;
+				$mark = $s;
+			} elseif ( $p < $pat_len && $pat[ $p ] === $path[ $s ] ) {
+				++$p;
+				++$s;
+			} elseif ( $p === $pat_len && ! $anchored ) {
+				return true;
+			} elseif ( -1 !== $star ) {
+				$p = $star + 1;
+				$s = ++$mark;
+			} else {
+				return false;
+			}
+		}
+		while ( $p < $pat_len && '*' === $pat[ $p ] ) {
+			++$p;
+		}
+		return $p === $pat_len;
 	}
 }
