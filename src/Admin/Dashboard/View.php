@@ -1,6 +1,8 @@
 <?php
 namespace GeoBoost\Admin\Dashboard;
 
+use GeoBoost\Scan\Checks;
+
 final class View {
 
 	public function render( array $data ): void {
@@ -8,6 +10,7 @@ final class View {
 		$this->header( $data );
 		$this->kpis( $data );
 		echo '<div class="geoboost-grid">';
+		$this->site_scan_card( (array) ( $data['site_scan'] ?? array() ) );
 		$this->score_distribution_card( $data['scores'] );
 		$this->site_health_card( $data['health'] );
 		$this->bots_card( $data['bots'] );
@@ -122,6 +125,128 @@ final class View {
 			return 'geoboost-kpi__delta--down';
 		}
 		return '';
+	}
+
+	private function site_scan_card( array $scan ): void {
+		$checks  = (array) ( $scan['checks'] ?? array() );
+		$scanned = (int) ( $scan['scanned_at'] ?? 0 );
+		$url     = (string) ( $scan['url'] ?? home_url( '/' ) );
+
+		echo '<div class="geoboost-card geoboost-scan" id="geoboost-site-scan">';
+		printf(
+			'<div class="geoboost-card__header"><h2>%s</h2><span class="geoboost-card__subtitle">%s</span></div>',
+			esc_html__( 'AI visibility scan', 'geoboost' ),
+			esc_html(
+				$scanned > 0
+					? sprintf(
+						/* translators: 1: relative time, 2: URL */
+						__( 'Scanned %1$s ago: %2$s', 'geoboost' ),
+						human_time_diff( $scanned, time() ),
+						$url
+					)
+					: __( 'Not run yet', 'geoboost' )
+			)
+		);
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['scan'] ) && 'invalid' === sanitize_key( wp_unslash( $_GET['scan'] ) ) ) {
+			echo '<div class="notice notice-error inline"><p>' . esc_html__( 'Enter a path like /about/ or a full URL on this site.', 'geoboost' ) . '</p></div>';
+		}
+
+		printf(
+			'<form class="geoboost-scan__form" method="post" action="%s"><input type="hidden" name="action" value="geoboost_site_scan" />',
+			esc_url( admin_url( 'admin-post.php' ) )
+		);
+		wp_nonce_field( 'geoboost_site_scan' );
+		printf(
+			'<label for="geoboost-scan-url">%1$s</label>' .
+			'<input type="text" id="geoboost-scan-url" name="geoboost_scan_url" class="regular-text" value="%2$s" />' .
+			'<button type="submit" class="button button-primary">%3$s</button></form>',
+			esc_html__( 'Page to scan', 'geoboost' ),
+			esc_attr( $url ),
+			$scanned > 0 ? esc_html__( 'Re-run scan', 'geoboost' ) : esc_html__( 'Run scan', 'geoboost' )
+		);
+		echo '<p class="geoboost-scan__note">' . esc_html__( 'Your server fetches the page, robots.txt, llms.txt and sitemap from your public URL, logged out, the way a crawler does. It also requests the page as GPTBot, ClaudeBot and PerplexityBot. Depending on your host these requests may skip your CDN, and firewalls that verify real crawlers by IP address may treat the test requests differently from real ones.', 'geoboost' ) . '</p>';
+
+		if ( ! empty( $scan['error'] ) ) {
+			echo '<p class="geoboost-scan__error">' . esc_html( (string) $scan['error'] ) . '</p>';
+		}
+
+		if ( empty( $checks ) ) {
+			echo '</div>';
+			return;
+		}
+
+		$score      = (int) ( $scan['score'] ?? 0 );
+		$categories = Checks::categories();
+		echo '<div class="geoboost-scan__summary">';
+		printf(
+			'<div class="geoboost-dist-hero__score"><span class="geoboost-pill geoboost-pill--%s">%d</span><span class="geoboost-dist-hero__label">%s</span></div>',
+			esc_attr( $this->score_tier( $score ) ),
+			(int) $score,
+			esc_html__( 'Site score', 'geoboost' )
+		);
+		echo '<ul class="geoboost-scan__categories" role="list">';
+		foreach ( $categories as $key => $label ) {
+			$value = $scan['categories'][ $key ] ?? null;
+			printf(
+				'<li><span class="geoboost-scan__category-label">%s</span><span class="geoboost-scan__category-value">%s</span></li>',
+				esc_html( $label ),
+				null === $value ? '&ndash;' : esc_html( (int) $value . '%' )
+			);
+		}
+		echo '</ul>';
+		echo '</div>';
+
+		$status_labels = array(
+			'fail' => __( 'Fail', 'geoboost' ),
+			'warn' => __( 'Warning', 'geoboost' ),
+			'pass' => __( 'Pass', 'geoboost' ),
+		);
+		$tones         = array(
+			'fail' => 'bad',
+			'warn' => 'warn',
+			'pass' => 'good',
+		);
+		foreach ( $categories as $key => $label ) {
+			$in_cat = array_values(
+				array_filter(
+					$checks,
+					static function ( $c ) use ( $key ): bool {
+						return is_array( $c ) && ( $c['category'] ?? '' ) === $key;
+					}
+				)
+			);
+			if ( empty( $in_cat ) ) {
+				continue;
+			}
+			$rank = array_flip( array_keys( $status_labels ) );
+			usort(
+				$in_cat,
+				static function ( array $a, array $b ) use ( $rank ): int {
+					return ( $rank[ $a['status'] ] ?? 3 ) <=> ( $rank[ $b['status'] ] ?? 3 );
+				}
+			);
+			echo '<h3 class="geoboost-scan__heading">' . esc_html( $label ) . '</h3>';
+			echo '<ul class="geoboost-scan__checks" role="list">';
+			foreach ( $in_cat as $c ) {
+				$status = isset( $status_labels[ $c['status'] ] ) ? $c['status'] : 'warn';
+				printf(
+					'<li class="geoboost-scan__check geoboost-scan__check--%1$s">' .
+					'<span class="geoboost-dot geoboost-dot--%2$s" aria-hidden="true"></span>' .
+					'<div class="geoboost-scan__body"><span class="geoboost-scan__title">%3$s <span class="geoboost-scan__status">%4$s</span></span>' .
+					'<span class="geoboost-scan__summary-text">%5$s</span>%6$s</div></li>',
+					esc_attr( $status ),
+					esc_attr( $tones[ $status ] ),
+					esc_html( (string) $c['title'] ),
+					esc_html( $status_labels[ $status ] ),
+					esc_html( (string) $c['summary'] ),
+					'' !== (string) ( $c['fix'] ?? '' ) ? '<span class="geoboost-scan__fix">' . esc_html( (string) $c['fix'] ) . '</span>' : ''
+				);
+			}
+			echo '</ul>';
+		}
+		echo '</div>';
 	}
 
 	private function score_distribution_card( array $scores ): void {

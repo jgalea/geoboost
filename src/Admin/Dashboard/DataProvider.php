@@ -4,6 +4,7 @@ namespace GeoBoost\Admin\Dashboard;
 use GeoBoost\Admin\Dismissals;
 use GeoBoost\Events\EventsTable;
 use GeoBoost\LlmsTxt\OverrideDetector;
+use GeoBoost\Scan\SiteScanner;
 use GeoBoost\SeoIntegration\Detector;
 
 final class DataProvider {
@@ -25,6 +26,7 @@ final class DataProvider {
 			'top_posts'       => $this->top_posts(),
 			'recommendations' => $this->recommendations(),
 			'health'          => $this->health(),
+			'site_scan'       => get_option( SiteScanner::OPTION, array() ),
 			'generated_at'    => time(),
 		);
 		set_transient( self::CACHE_KEY, $data, self::CACHE_TTL );

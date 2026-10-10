@@ -4,7 +4,7 @@ Tags: ai-seo, generative-engine-optimization, llms-txt, schema, chatgpt
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,6 +70,12 @@ Most posts lack a Summary block, Key Facts block, or FAQ signals — each worth 
 A dedicated `{prefix}_geoboost_events` table for bot crawl and referral logs. Post scores and signals are stored as postmeta. Everything is removed on uninstall.
 
 == Changelog ==
+
+= 0.4.0 =
+* New AI visibility scan on the dashboard. It fetches your home page, or any URL on your site, from your public address the way a crawler does, and scores it 0-100 across crawler access, readable content, structured data and discovery files.
+* The scan checks robots.txt per AI crawler (search crawlers fail if blocked, training crawlers only warn), requests the page as GPTBot, ClaudeBot and PerplexityBot to catch firewall blocks, and looks for noindex/noai, readable text, headings, FAQ signals, alt text, lang, Organization schema with sameAs, contact links, Open Graph, canonical, XML sitemap and a valid llms.txt.
+* AI bot settings now mark which crawlers feed live AI answers and warn when you block one of them.
+* The scan's own requests are not logged as AI bot crawls.
 
 = 0.3.0 =
 * New dashboard: KPI cards (average score, bot crawls + sparkline, AI referrals, top crawler) with vs-prior-30d deltas; segmented score distribution; site health card; top posts with Last scanned column; actionable recommendation cards with deep-linked filtered post lists.
