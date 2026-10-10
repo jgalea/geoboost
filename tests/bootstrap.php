@@ -87,3 +87,9 @@ if ( ! function_exists( 'number_format_i18n' ) ) {
         return number_format( (float) $number, $decimals );
     }
 }
+
+if ( ! function_exists( 'wp_parse_url' ) ) {
+    function wp_parse_url( string $url, int $component = -1 ) {
+        return parse_url( $url, $component );
+    }
+}

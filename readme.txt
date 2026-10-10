@@ -71,6 +71,12 @@ A dedicated `{prefix}_geoboost_events` table for bot crawl and referral logs. Po
 
 == Changelog ==
 
+= Unreleased =
+* New AI visibility scan on the dashboard. It fetches your home page, or any URL on your site, from your public address the way a crawler does, and scores it 0-100 across crawler access, readable content, structured data and discovery files.
+* The scan checks robots.txt per AI crawler (search crawlers fail if blocked, training crawlers only warn), requests the page as GPTBot, ClaudeBot and PerplexityBot to catch firewall blocks, and looks for noindex/noai, readable text, headings, FAQ signals, alt text, lang, Organization schema with sameAs, contact links, Open Graph, canonical, XML sitemap and a valid llms.txt.
+* AI bot settings now mark which crawlers feed live AI answers and warn when you block one of them.
+* The scan's own requests are not logged as AI bot crawls.
+
 = 0.3.0 =
 * New dashboard: KPI cards (average score, bot crawls + sparkline, AI referrals, top crawler) with vs-prior-30d deltas; segmented score distribution; site health card; top posts with Last scanned column; actionable recommendation cards with deep-linked filtered post lists.
 * New per-post ScoreBox design with a score ring and tier-specific notes.

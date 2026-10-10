@@ -2,6 +2,7 @@
 namespace GeoBoost\Events;
 
 use GeoBoost\Robots\AiBotController;
+use GeoBoost\Scan\SiteScanner;
 
 final class BotTracker {
 
@@ -16,6 +17,10 @@ final class BotTracker {
 	}
 
 	public function maybe_log_request(): void {
+		$scan = isset( $_SERVER['HTTP_X_GEOBOOST_SCAN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_GEOBOOST_SCAN'] ) ) : '';
+		if ( '' !== $scan && SiteScanner::is_scan_request( $scan ) ) {
+			return;
+		}
 		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		$this->process(
 			array(

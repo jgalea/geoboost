@@ -364,3 +364,134 @@
 	display: inline-flex;
 	align-items: center;
 }
+
+/* AI visibility scan */
+
+.geoboost-scan__form {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.geoboost-scan__form label {
+	font-weight: 500;
+}
+
+.geoboost-scan__note {
+	margin: 0 0 16px;
+	font-size: 12px;
+	color: var(--gb-text-subtle);
+	max-width: 80ch;
+}
+
+.geoboost-scan__error {
+	margin: 0 0 16px;
+	padding: 10px 12px;
+	border-left: 4px solid var(--gb-poor);
+	background: var(--gb-bg-subtle);
+}
+
+.geoboost-scan__summary {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 24px;
+	padding: 14px 0;
+	border-top: 1px solid var(--gb-border);
+	border-bottom: 1px solid var(--gb-border);
+}
+
+.geoboost-scan__summary .geoboost-pill {
+	font-size: 22px;
+	padding: 6px 14px;
+}
+
+.geoboost-scan__categories {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 24px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.geoboost-scan__categories li {
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+}
+
+.geoboost-scan__category-label {
+	font-size: 12px;
+	color: var(--gb-text-muted);
+}
+
+.geoboost-scan__category-value {
+	font-size: 18px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.geoboost-scan__heading {
+	margin: 20px 0 4px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--gb-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.geoboost-scan__checks {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.geoboost-scan__check {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	margin: 0;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--gb-border);
+}
+
+.geoboost-scan__check:last-child {
+	border-bottom: 0;
+}
+
+.geoboost-scan__check .geoboost-dot {
+	margin-top: 6px;
+	flex-shrink: 0;
+}
+
+.geoboost-scan__body {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.geoboost-scan__title {
+	font-weight: 600;
+}
+
+.geoboost-scan__status {
+	margin-left: 6px;
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--gb-text-subtle);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.geoboost-scan__summary-text {
+	color: var(--gb-text-muted);
+	word-break: break-word;
+}
+
+.geoboost-scan__fix {
+	color: var(--gb-text);
+	font-size: 13px;
+}

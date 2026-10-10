@@ -1,6 +1,8 @@
 <?php
 namespace GeoBoost\Admin\Dashboard;
 
+use GeoBoost\Scan\SiteScanner;
+
 final class Page {
 
 	private const SLUG = 'geoboost';
@@ -8,6 +10,7 @@ final class Page {
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_action( 'admin_post_geoboost_site_scan', array( $this, 'handle_site_scan' ) );
 	}
 
 	public function add_menu(): void {
@@ -54,5 +57,25 @@ final class Page {
 		}
 		$data = ( new DataProvider() )->get();
 		( new View() )->render( $data );
+	}
+
+	public function handle_site_scan(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Permission denied.', 'geoboost' ), 403 );
+		}
+		check_admin_referer( 'geoboost_site_scan' );
+
+		$input  = isset( $_POST['geoboost_scan_url'] ) ? esc_url_raw( wp_unslash( $_POST['geoboost_scan_url'] ) ) : '';
+		$target = SiteScanner::normalize_target( $input, home_url( '/' ) );
+		$args   = array( 'page' => self::SLUG );
+		if ( null === $target ) {
+			$args['scan'] = 'invalid';
+		} else {
+			$result = ( new SiteScanner() )->run( $target, (bool) get_option( 'blog_public' ) );
+			update_option( SiteScanner::OPTION, $result, false );
+			DataProvider::flush();
+		}
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) . '#geoboost-site-scan' );
+		exit;
 	}
 }
