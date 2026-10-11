@@ -400,6 +400,9 @@ final class Checks {
 		$total = 0;
 		$got   = 0.0;
 		foreach ( $checks as $c ) {
+			if ( 'skip' === $c['status'] ) {
+				continue;
+			}
 			$total += (int) $c['weight'];
 			$got   += (int) $c['weight'] * ( self::POINTS[ $c['status'] ] ?? 0.0 );
 		}

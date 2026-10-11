@@ -291,4 +291,56 @@ final class SiteScannerTest extends TestCase {
 		$this->assertArrayNotHasKey( 'error', $result );
 		$this->assertSame( 'https://example.com/new/', $result['final_url'] );
 	}
+
+	public function test_scan_stops_at_the_time_budget_and_marks_the_rest_not_run(): void {
+		$now      = 1000.0;
+		$requests = array();
+		$s        = new SiteScanner();
+		$s->set_clock(
+			static function () use ( &$now ): float {
+				return $now;
+			}
+		);
+		$s->set_fetcher(
+			static function ( string $url ) use ( &$now, &$requests ): array {
+				$requests[] = $url;
+				$now       += 9;
+				if ( 'https://example.com/' === $url ) {
+					return array(
+						'status' => 200,
+						'body'   => '<html lang="en"><body><h1>Hi</h1><p>' . str_repeat( 'text ', 320 ) . '</p></body></html>',
+					);
+				}
+				return array( 'status' => 404 );
+			}
+		);
+
+		$r      = $s->scan( 'https://example.com/', true );
+		$checks = array_column( $r['checks'], null, 'id' );
+
+		$this->assertSame( array( 'https://example.com/', 'https://example.com/robots.txt', 'https://example.com/llms.txt' ), $requests );
+		$this->assertSame( 'skip', $checks['live-bots']['status'] );
+		$this->assertSame( 'skip', $checks['sitemap']['status'] );
+		$this->assertSame( 'pass', $checks['robots']['status'] );
+		$this->assertSame( 'warn', $checks['llms']['status'] );
+		$this->assertStringContainsString( '2 checks didn\'t run', $r['warning'] );
+	}
+
+	public function test_scan_within_budget_has_no_warning(): void {
+		$s = new SiteScanner();
+		$s->set_fetcher(
+			static function ( string $url ): array {
+				if ( 'https://example.com/' === $url ) {
+					return array(
+						'status' => 200,
+						'body'   => '<html><body><p>' . str_repeat( 'text ', 320 ) . '</p></body></html>',
+					);
+				}
+				return array( 'status' => 404 );
+			}
+		);
+		$r = $s->scan( 'https://example.com/', true );
+		$this->assertArrayNotHasKey( 'warning', $r );
+		$this->assertNotContains( 'skip', array_column( $r['checks'], 'status' ) );
+	}
 }

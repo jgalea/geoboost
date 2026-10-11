@@ -27,9 +27,9 @@ final class View {
 			esc_html__( 'GEOBoost Dashboard', 'geoboost' ),
 			esc_html(
 				sprintf(
-					/* translators: %s: relative time */
-					__( 'Updated %s', 'geoboost' ),
-					human_time_diff( (int) $data['generated_at'], time() ) . ' ' . __( 'ago', 'geoboost' )
+					/* translators: %s: relative time, e.g. "5 mins" */
+					__( 'Updated %s ago', 'geoboost' ),
+					human_time_diff( (int) $data['generated_at'], time() )
 				)
 			)
 		);
@@ -171,6 +171,9 @@ final class View {
 		if ( ! empty( $scan['error'] ) ) {
 			echo '<p class="geoboost-scan__error">' . esc_html( (string) $scan['error'] ) . '</p>';
 		}
+		if ( ! empty( $scan['warning'] ) ) {
+			echo '<div class="notice notice-warning inline"><p>' . esc_html( (string) $scan['warning'] ) . '</p></div>';
+		}
 
 		if ( empty( $checks ) ) {
 			echo '</div>';
@@ -202,11 +205,13 @@ final class View {
 			'fail' => __( 'Fail', 'geoboost' ),
 			'warn' => __( 'Warning', 'geoboost' ),
 			'pass' => __( 'Pass', 'geoboost' ),
+			'skip' => __( 'Not run', 'geoboost' ),
 		);
 		$tones         = array(
 			'fail' => 'bad',
 			'warn' => 'warn',
 			'pass' => 'good',
+			'skip' => 'skip',
 		);
 		foreach ( $categories as $key => $label ) {
 			$in_cat = array_values(

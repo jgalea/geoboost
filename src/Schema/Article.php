@@ -5,7 +5,7 @@ final class Article {
 
 	/**
 	 * @param array{
-	 *   title:string, url:string, excerpt:string, content_html:string,
+	 *   title:string, url:string, excerpt:string,
 	 *   date_published:string, date_modified:string,
 	 *   author_name:string, author_url:string,
 	 *   site_name:string, site_url:string, image_url?:string
