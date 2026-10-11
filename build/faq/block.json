@@ -3,6 +3,7 @@
   "apiVersion": 3,
   "name": "geoboost/faq",
   "title": "GEOBoost FAQ",
+  "textdomain": "geoboost",
   "category": "geoboost",
   "icon": "editor-help",
   "description": "Accordion-style FAQ with FAQPage schema output.",

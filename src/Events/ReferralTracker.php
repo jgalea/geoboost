@@ -30,15 +30,14 @@ final class ReferralTracker {
 	}
 
 	public function maybe_log_request(): void {
-		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.NonceVerification.Recommended
 		$this->process(
 			array(
-				'referer'    => isset( $_SERVER['HTTP_REFERER'] ) ? (string) wp_unslash( $_SERVER['HTTP_REFERER'] ) : '',
-				'path'       => isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '',
-				'utm_source' => isset( $_GET['utm_source'] ) ? (string) wp_unslash( $_GET['utm_source'] ) : '',
+				'referer'    => isset( $_SERVER['HTTP_REFERER'] ) ? esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '',
+				'path'       => isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '',
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tracking of a public query arg.
+				'utm_source' => isset( $_GET['utm_source'] ) ? sanitize_text_field( wp_unslash( $_GET['utm_source'] ) ) : '',
 			)
 		);
-		// phpcs:enable
 	}
 
 	public function process( array $req ): void {
@@ -47,7 +46,7 @@ final class ReferralTracker {
 		if ( null === $source ) {
 			return;
 		}
-		$parsed  = parse_url( $raw_referer );
+		$parsed  = wp_parse_url( $raw_referer );
 		$referer = ( isset( $parsed['scheme'], $parsed['host'] ) )
 			? $parsed['scheme'] . '://' . $parsed['host']
 			: '';
@@ -71,7 +70,7 @@ final class ReferralTracker {
 		if ( '' === $referer ) {
 			return null;
 		}
-		$host = strtolower( (string) parse_url( $referer, PHP_URL_HOST ) );
+		$host = strtolower( (string) wp_parse_url( $referer, PHP_URL_HOST ) );
 		return self::HOST_MAP[ $host ] ?? null;
 	}
 }

@@ -9,7 +9,7 @@ final class ContentAnalyzer {
 	 */
 	public function analyze( array $input ): array {
 		$html      = (string) ( $input['content_html'] ?? '' );
-		$text      = trim( preg_replace( '/\s+/', ' ', strip_tags( $html ) ) );
+		$text      = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $html ) ) );
 		$words     = '' === $text ? 0 : count( preg_split( '/\s+/', $text ) );
 		$site_host = (string) ( $input['site_host'] ?? '' );
 

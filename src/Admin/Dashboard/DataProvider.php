@@ -83,26 +83,29 @@ final class DataProvider {
 		$prior_to     = $current_from;
 		$table        = EventsTable::name();
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows          = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT bot_or_source, COUNT(*) AS n FROM {$table}
+				'SELECT bot_or_source, COUNT(*) AS n FROM %i
 				WHERE event_type = %s AND created_at >= %s
-				GROUP BY bot_or_source ORDER BY n DESC",
+				GROUP BY bot_or_source ORDER BY n DESC',
+				$table,
 				$type,
 				$current_from
 			)
 		);
 		$current_total = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table} WHERE event_type = %s AND created_at >= %s",
+				'SELECT COUNT(*) FROM %i WHERE event_type = %s AND created_at >= %s',
+				$table,
 				$type,
 				$current_from
 			)
 		);
 		$prior_total   = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table} WHERE event_type = %s AND created_at >= %s AND created_at < %s",
+				'SELECT COUNT(*) FROM %i WHERE event_type = %s AND created_at >= %s AND created_at < %s',
+				$table,
 				$type,
 				$prior_from,
 				$prior_to
@@ -127,12 +130,13 @@ final class DataProvider {
 		global $wpdb;
 		$cutoff = gmdate( 'Y-m-d', time() - ( self::WINDOW * DAY_IN_SECONDS ) );
 		$table  = EventsTable::name();
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT DATE(created_at) AS d, COUNT(*) AS n FROM {$table}
+				'SELECT DATE(created_at) AS d, COUNT(*) AS n FROM %i
 				WHERE event_type = %s AND created_at >= %s
-				GROUP BY DATE(created_at) ORDER BY d ASC",
+				GROUP BY DATE(created_at) ORDER BY d ASC',
+				$table,
 				$type,
 				$cutoff
 			)

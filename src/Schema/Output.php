@@ -80,7 +80,6 @@ final class Output {
 				'title'          => get_the_title( $post ),
 				'url'            => (string) get_permalink( $post ),
 				'excerpt'        => wp_strip_all_tags( (string) get_the_excerpt( $post ) ),
-				'content_html'   => (string) apply_filters( 'the_content', $post->post_content ),
 				'date_published' => (string) get_the_date( 'c', $post ),
 				'date_modified'  => (string) get_the_modified_date( 'c', $post ),
 				'author_name'    => get_the_author_meta( 'display_name', $author_id ),
@@ -139,13 +138,11 @@ final class Output {
 		if ( ! $post ) {
 			return '';
 		}
-		$raw = (string) get_post_meta( $post->ID, '_geoboost_custom_jsonld', true );
-		if ( '' === trim( $raw ) ) {
+		// Values saved before 0.4.1 are stored raw, so re-encode on output too.
+		$json = ( new CustomJsonLd() )->normalize( (string) get_post_meta( $post->ID, '_geoboost_custom_jsonld', true ) );
+		if ( '' === $json ) {
 			return '';
 		}
-		// Already validated on save; trust it but wrap in script tag.
-		$json = trim( $raw );
-		$json = str_replace( '</', '<\/', $json );
 		return '<script type="application/ld+json">' . $json . '</script>';
 	}
 }

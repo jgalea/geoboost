@@ -3,6 +3,7 @@
 	"apiVersion": 3,
 	"name": "geoboost/key-facts",
 	"title": "GEOBoost Key Facts",
+	"textdomain": "geoboost",
 	"category": "geoboost",
 	"icon": "list-view",
 	"description": "Structured key/value facts. Renders as a definition list with schema.org markup.",

@@ -3,6 +3,7 @@
   "apiVersion": 3,
   "name": "geoboost/summary",
   "title": "GEOBoost Summary",
+  "textdomain": "geoboost",
   "category": "geoboost",
   "icon": "excerpt-view",
   "description": "Short TL;DR block — gives LLMs a fact-dense summary to cite.",
