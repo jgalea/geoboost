@@ -1,10 +1,10 @@
 === GEOBoost ===
 Contributors: jeangalea
 Tags: ai-seo, generative-engine-optimization, llms-txt, schema, chatgpt
-Requires at least: 6.0
-Tested up to: 6.9
+Requires at least: 6.3
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.4.0
+Stable tag: 0.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,9 +67,24 @@ Most posts lack a Summary block, Key Facts block, or FAQ signals — each worth 
 
 = Where does GEOBoost store data? =
 
-A dedicated `{prefix}_geoboost_events` table for bot crawl and referral logs. Post scores and signals are stored as postmeta. Everything is removed on uninstall.
+A dedicated `{prefix}_geoboost_events` table for bot crawl and referral logs. Post scores and signals are stored as post meta, author fields as user meta, and settings as options. Deleting the plugin removes all of it, including the table and the scheduled cleanup task, on every site of a multisite network.
+
+= Does GEOBoost send my data anywhere? =
+
+No. GEOBoost only requests your own site: the AI visibility scan (including as GPTBot, ClaudeBot and PerplexityBot) and a check that nothing else is serving /llms.txt. No third-party services are contacted.
 
 == Changelog ==
+
+= 0.4.1 =
+* Fix: /llms.txt now works right after activation, without re-saving permalinks.
+* Fix: no more "headers already sent" warnings on /llms.txt with WP_DEBUG on.
+* The site scan stops after 25 seconds so it can't hit the PHP time limit. Checks it didn't reach show as "Not run" and are left out of the score.
+* Custom JSON-LD is re-encoded on save and output so it can't break out of its script tag. Invalid JSON is still rejected.
+* The GEO score no longer runs other plugins' content filters when it analyzes a post.
+* Request data used for crawl and referral logging, and author expertise terms, is now sanitized.
+* Uninstall now removes all post meta, user meta, transients, options, the events table and the scheduled task, on every site in a network.
+* Translatable error messages and block text domains.
+* Requires WordPress 6.3 or later. Tested up to 7.1.
 
 = 0.4.0 =
 * New AI visibility scan on the dashboard. It fetches your home page, or any URL on your site, from your public address the way a crawler does, and scores it 0-100 across crawler access, readable content, structured data and discovery files.

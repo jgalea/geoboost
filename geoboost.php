@@ -2,8 +2,8 @@
 /**
  * Plugin Name: GEOBoost
  * Description: Generative Engine Optimization for WordPress. Make your site AI-citable.
- * Version: 0.4.0
- * Requires at least: 6.0
+ * Version: 0.4.1
+ * Requires at least: 6.3
  * Requires PHP: 7.4
  * Author: Jean Galea
  * License: GPL v2 or later
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'GEOBOOST_VERSION', '0.4.0' );
+define( 'GEOBOOST_VERSION', '0.4.1' );
 define( 'GEOBOOST_FILE', __FILE__ );
 define( 'GEOBOOST_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GEOBOOST_URL', plugin_dir_url( __FILE__ ) );
