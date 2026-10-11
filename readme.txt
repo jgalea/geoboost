@@ -8,25 +8,26 @@ Stable tag: 0.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Generative Engine Optimization for WordPress. Get cited by ChatGPT, Claude, Gemini, and Perplexity.
+See what stops AI search from reading your site, which AI crawlers visit, and give ChatGPT, Claude and Gemini what they need to cite you.
 
 == Description ==
 
-GEOBoost prepares your WordPress site to be cited by AI search engines and chatbots — ChatGPT, Claude, Gemini, Perplexity, and Microsoft Copilot — when users ask questions related to your content.
+GEOBoost scans your site the way AI crawlers see it and tells you what's stopping ChatGPT, Claude, Gemini and Perplexity from reading or citing it, with a fix for each problem. Then it tracks whether those crawlers actually visit and whether AI answers send you traffic.
 
-GEOBoost is additive. It runs alongside Yoast SEO, Rank Math, All in One SEO, SEOPress, SureRank, or The SEO Framework without conflict. Where your SEO plugin covers traditional search (Google, Bing), GEOBoost adds the layer AI search uses: structured summaries, key facts, author E-E-A-T signals, and the emerging llms.txt standard.
+GEOBoost runs alongside Yoast SEO, Rank Math, All in One SEO, SEOPress, SureRank or The SEO Framework without conflict. Your SEO plugin covers traditional search; GEOBoost covers what AI search needs on top: crawler access, readable content, summaries, key facts, author signals and llms.txt.
 
 **What GEOBoost does**
 
-* **llms.txt generation** — serves an auto-generated `/llms.txt` at your site root following the llmstxt.org proposal, with your site description, key pages (selected by GEO score), blog posts, pages, and authors.
-* **AI-ready schema output** — emits Article, Person, Organization, and WebSite + SearchAction JSON-LD. Auto-detects your SEO plugin and skips schema types it already outputs to prevent duplicates.
-* **Gutenberg blocks for AI citability** — Summary (TL;DR), Key Facts, and FAQ (with FAQPage schema). Shortcode fallbacks for the classic editor.
-* **GEO Score** — per-post 0–100 score with a score history, tier grading, and per-post recommendations in the post sidebar.
-* **Author E-E-A-T** — expertise, credentials, and qualifications added to user profiles; surfaced as Person schema on author archives.
-* **AI bot controls** — one-click Disallow in robots.txt for GPTBot, ClaudeBot, Google-Extended, PerplexityBot, and more.
-* **AI crawl and referral tracking** — logs bot visits and AI referral clicks to a dedicated table. See which AI engines are crawling your site and which are sending traffic.
-* **GEO dashboard** — average score, score distribution, bot activity (30 days with a sparkline), AI referral clicks with 30-day deltas, top-performing posts, actionable recommendations, and site health.
-* **Custom JSON-LD per post** — meta box to append arbitrary JSON-LD for structured data your SEO plugin doesn't handle.
+* **AI visibility scan**: reads your robots.txt rules for each AI crawler, requests your page as GPTBot, ClaudeBot and PerplexityBot to catch firewalls and security plugins that turn them away (including challenge or login pages served with a 200), and checks noindex/noai tags, text that only appears with JavaScript, headings, FAQ answers, alt text, schema, contact markup, Open Graph, your sitemap and llms.txt. You get a 0 to 100 score and a fix for every problem.
+* **AI crawl and referral tracking**: logs AI bot visits and clicks from AI answers to a dedicated table, so you can see which AI engines crawl your site and which send traffic.
+* **llms.txt generation**: serves an auto-generated `/llms.txt` at your site root following the llmstxt.org proposal, with your site description, key pages, posts, pages and authors.
+* **AI-ready schema output**: emits Article, Person, Organization and WebSite + SearchAction JSON-LD. It detects your SEO plugin and skips schema types it already outputs, so nothing is duplicated.
+* **Blocks for AI citability**: Summary (TL;DR), Key Facts and FAQ (with FAQPage schema), with shortcode fallbacks for the classic editor.
+* **GEO Score**: a 0 to 100 score per post with history, tier grading and recommendations in the post sidebar.
+* **Author E-E-A-T**: expertise, credentials and qualifications on user profiles, output as Person schema on author archives.
+* **AI bot controls**: one-click Disallow in robots.txt for GPTBot, ClaudeBot, Google-Extended, PerplexityBot and more, with a warning when you block a crawler that AI search uses.
+* **GEO dashboard**: the site scan, average score and distribution, 30 days of bot activity, AI referral clicks with 30-day changes, top posts, recommendations and site health.
+* **Custom JSON-LD per post**: a meta box to add JSON-LD your SEO plugin doesn't handle.
 
 **Who it's for**
 

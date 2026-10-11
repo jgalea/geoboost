@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: GEOBoost
- * Description: Generative Engine Optimization for WordPress. Make your site AI-citable.
+ * Description: See what stops AI search from reading your site, track AI crawlers and referrals, and serve llms.txt and AI-ready schema.
  * Version: 0.4.1
  * Requires at least: 6.3
  * Requires PHP: 7.4
