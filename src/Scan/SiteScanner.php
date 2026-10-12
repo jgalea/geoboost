@@ -9,6 +9,7 @@ final class SiteScanner {
 	private const TOKEN_KEY  = 'geoboost_scan_token';
 	private const CHALLENGE  = '/cf-chl|challenge-platform|just a moment\.\.\.|captcha|access denied|attention required|are you a robot|verify you are human|password-protected|opening soon/i';
 	private const PAGE_CAP   = 1500000;
+	private const BUDGET     = 25;
 	private const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36 GEOBoostSiteScan';
 	private const LIVE_BOTS  = array(
 		'GPTBot'        => 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; GPTBot/1.1; +https://openai.com/gptbot',
@@ -18,6 +19,13 @@ final class SiteScanner {
 
 	/** @var callable|null */
 	private $fetcher = null;
+
+	/** @var callable|null */
+	private $clock = null;
+
+	private float $deadline = 0.0;
+
+	private bool $sitemap_skipped = false;
 
 	private string $token = '';
 
@@ -29,6 +37,10 @@ final class SiteScanner {
 
 	public function set_fetcher( callable $fetcher ): void {
 		$this->fetcher = $fetcher;
+	}
+
+	public function set_clock( callable $clock ): void {
+		$this->clock = $clock;
 	}
 
 	/**
@@ -91,8 +103,10 @@ final class SiteScanner {
 	 * @return array<string,mixed>
 	 */
 	public function scan( string $url, bool $blog_public ): array {
-		$start       = wp_parse_url( $url );
-		$this->scope = array(
+		$this->deadline        = $this->now() + self::BUDGET;
+		$this->sitemap_skipped = false;
+		$start                 = wp_parse_url( $url );
+		$this->scope           = array(
 			'host' => strtolower( (string) ( $start['host'] ?? '' ) ),
 			'port' => $start['port'] ?? null,
 		);
@@ -139,6 +153,7 @@ final class SiteScanner {
 				'status'     => $res['status'],
 				'error'      => $res['error'],
 				'challenged' => self::is_challenged( $page, (int) $facts['word_count'], $res ),
+				'skipped'    => ! empty( $res['skipped'] ),
 			);
 		}
 
@@ -156,9 +171,23 @@ final class SiteScanner {
 				'llms_length'   => $llms_len,
 			)
 		);
-		$score   = $checker->score( $checks );
+		$not_run = array();
+		if ( ! empty( $robots_res['skipped'] ) ) {
+			$not_run = array( 'robots', 'robots-search', 'robots-training' );
+		}
+		if ( ! empty( $llms['skipped'] ) ) {
+			$not_run[] = 'llms';
+		}
+		if ( array_filter( array_column( $bots, 'skipped' ) ) ) {
+			$not_run[] = 'live-bots';
+		}
+		if ( $this->sitemap_skipped ) {
+			$not_run[] = 'sitemap';
+		}
+		$checks = self::mark_not_run( $checks, $not_run );
+		$score  = $checker->score( $checks );
 
-		return array(
+		$result  = array(
 			'url'        => $url,
 			'final_url'  => $page['final_url'],
 			'scanned_at' => time(),
@@ -166,6 +195,41 @@ final class SiteScanner {
 			'categories' => $score['categories'],
 			'checks'     => $checks,
 		);
+		$skipped = count( array_keys( array_column( $checks, 'status' ), 'skip', true ) );
+		if ( $skipped > 0 ) {
+			$result['warning'] = sprintf(
+				/* translators: 1: number of seconds, 2: number of checks */
+				_n(
+					'The scan stopped after %1$d seconds so it wouldn\'t time out, and %2$d check didn\'t run. It\'s left out of the score. Run the scan again once your site responds faster.',
+					'The scan stopped after %1$d seconds so it wouldn\'t time out, and %2$d checks didn\'t run. They\'re left out of the score. Run the scan again once your site responds faster.',
+					$skipped,
+					'geoboost'
+				),
+				self::BUDGET,
+				$skipped
+			);
+		}
+		return $result;
+	}
+
+	/**
+	 * @param array<int,array<string,mixed>> $checks
+	 * @param array<int,string> $ids
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function mark_not_run( array $checks, array $ids ): array {
+		foreach ( $checks as $i => $check ) {
+			if ( in_array( $check['id'], $ids, true ) ) {
+				$checks[ $i ]['status']  = 'skip';
+				$checks[ $i ]['summary'] = __( 'Not run: the scan reached its time limit first.', 'geoboost' );
+				$checks[ $i ]['fix']     = '';
+			}
+		}
+		return $checks;
+	}
+
+	private function now(): float {
+		return $this->clock ? (float) ( $this->clock )() : microtime( true );
 	}
 
 	/**
@@ -185,6 +249,10 @@ final class SiteScanner {
 
 		foreach ( array_unique( $candidates ) as $url ) {
 			$res = $this->fetch( $url, self::BROWSER_UA, 5, 200000 );
+			if ( ! empty( $res['skipped'] ) ) {
+				$this->sitemap_skipped = true;
+				return null;
+			}
 			if ( 200 === $res['status'] && preg_match( '/<(urlset|sitemapindex)\b/i', $res['body'] ) ) {
 				return $url;
 			}
@@ -228,11 +296,25 @@ final class SiteScanner {
 	 * Follows up to five redirects by hand, refusing any hop that leaves the
 	 * scanned site's host and port or isn't http(s).
 	 *
-	 * @return array{status:int,body:string,headers:array<string,string>,final_url:string,error:string}
+	 * Requests stop once the scan's time budget is spent; those come back with
+	 * 'skipped' set.
+	 *
+	 * @return array{status:int,body:string,headers:array<string,string>,final_url:string,error:string,skipped?:bool}
 	 */
 	private function fetch( string $url, string $ua, int $timeout, int $cap ): array {
 		for ( $hop = 0; ; $hop++ ) {
-			$res      = $this->request( $url, $ua, $timeout, $cap );
+			$remaining = $this->deadline - $this->now();
+			if ( $remaining < 1 ) {
+				return array(
+					'status'    => 0,
+					'body'      => '',
+					'headers'   => array(),
+					'error'     => __( 'Not run: the scan reached its time limit.', 'geoboost' ),
+					'final_url' => $url,
+					'skipped'   => true,
+				);
+			}
+			$res      = $this->request( $url, $ua, (int) min( $timeout, floor( $remaining ) ), $cap );
 			$location = $res['headers']['location'] ?? '';
 			if ( $res['status'] < 300 || $res['status'] >= 400 || '' === $location ) {
 				return $res + array( 'final_url' => $url );
@@ -307,7 +389,8 @@ final class SiteScanner {
 				'user-agent'          => $ua,
 				'headers'             => $headers,
 				'limit_response_size' => $cap,
-				'sslverify'           => apply_filters( 'https_local_ssl_verify', false ),
+				// Same-host loopback request, so this follows core's loopback default.
+				'sslverify'           => apply_filters( 'https_local_ssl_verify', false ), // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core filter.
 			)
 		);
 

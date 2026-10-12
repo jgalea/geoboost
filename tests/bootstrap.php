@@ -157,3 +157,50 @@ if ( ! function_exists( 'geoboost_test_http_request' ) ) {
         return $response['body'] ?? '';
     }
 }
+
+// Activation stubs: options come from $GLOBALS['geoboost_test_options'], and
+// rewrite and cron calls are recorded in order in $GLOBALS['geoboost_test_calls'].
+if ( ! function_exists( 'get_option' ) ) {
+    function get_option( string $name, $default = false ) {
+        return $GLOBALS['geoboost_test_options'][ $name ] ?? $default;
+    }
+}
+
+if ( ! function_exists( 'wp_next_scheduled' ) ) {
+    function wp_next_scheduled( string $hook ) {
+        $GLOBALS['geoboost_test_calls'][] = array( 'wp_next_scheduled', $hook );
+        return 1;
+    }
+}
+
+if ( ! function_exists( 'add_rewrite_rule' ) ) {
+    function add_rewrite_rule( string $regex, $query, string $after = 'bottom' ): void {
+        $GLOBALS['geoboost_test_calls'][] = array( 'add_rewrite_rule', $regex );
+    }
+}
+
+if ( ! function_exists( 'flush_rewrite_rules' ) ) {
+    function flush_rewrite_rules( bool $hard = true ): void {
+        $GLOBALS['geoboost_test_calls'][] = array( 'flush_rewrite_rules' );
+    }
+}
+
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+    function wp_strip_all_tags( $text, bool $remove_breaks = false ): string {
+        $text = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', (string) $text );
+        $text = strip_tags( $text );
+        if ( $remove_breaks ) {
+            $text = preg_replace( '/[\r\n\t ]+/', ' ', $text );
+        }
+        return trim( $text );
+    }
+}
+
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+    function sanitize_text_field( $str ): string {
+        $str = wp_strip_all_tags( (string) $str );
+        $str = preg_replace( '/[\r\n\t ]+/', ' ', $str );
+        $str = preg_replace( '/%[a-f0-9]{2}/i', '', $str );
+        return trim( $str );
+    }
+}

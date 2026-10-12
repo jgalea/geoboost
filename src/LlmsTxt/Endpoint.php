@@ -129,8 +129,8 @@ final class Endpoint {
 		$authors = array();
 		foreach ( get_users(
 			array(
-				'who'    => 'authors',
-				'number' => 20,
+				'capability' => array( 'edit_posts' ),
+				'number'     => 20,
 			)
 		) as $u ) {
 			$credentials = (string) get_user_meta( $u->ID, 'geoboost_credentials', true );

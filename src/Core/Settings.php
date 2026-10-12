@@ -10,9 +10,9 @@ final class Settings {
 	/** @var callable|null */
 	private static $setter = null;
 
-	public function get( string $key, $default = null ) {
+	public function get( string $key, $fallback = null ) {
 		$getter = self::$getter ?? 'get_option';
-		return $getter( self::PREFIX . $key, $default );
+		return $getter( self::PREFIX . $key, $fallback );
 	}
 
 	public function set( string $key, $value ): void {

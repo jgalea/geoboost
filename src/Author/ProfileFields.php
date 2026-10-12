@@ -60,14 +60,14 @@ final class ProfileFields {
 		}
 		update_user_meta( $user_id, 'geoboost_job_title', sanitize_text_field( wp_unslash( $_POST['geoboost_job_title'] ?? '' ) ) );
 		update_user_meta( $user_id, 'geoboost_credentials', sanitize_textarea_field( wp_unslash( $_POST['geoboost_credentials'] ?? '' ) ) );
-		// Sanitized by sanitize_expertise / sanitize_urls below.
-		update_user_meta( $user_id, 'geoboost_expertise', $this->sanitize_expertise( (string) wp_unslash( $_POST['geoboost_expertise'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		update_user_meta( $user_id, 'geoboost_expertise', $this->sanitize_expertise( sanitize_text_field( wp_unslash( $_POST['geoboost_expertise'] ?? '' ) ) ) );
+		// Each line is checked and passed through esc_url_raw in sanitize_urls.
 		$urls_raw = preg_split( '/\r?\n/', (string) wp_unslash( $_POST['geoboost_sameas'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		update_user_meta( $user_id, 'geoboost_sameas', $this->sanitize_urls( $urls_raw ) );
 	}
 
 	public function sanitize_expertise( string $csv ): array {
-		$items = array_filter( array_map( 'trim', explode( ',', $csv ) ) );
+		$items = array_filter( array_map( 'sanitize_text_field', explode( ',', $csv ) ) );
 		$seen  = array();
 		$out   = array();
 		foreach ( $items as $item ) {

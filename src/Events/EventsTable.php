@@ -33,8 +33,6 @@ final class EventsTable {
 
 	public static function drop(): void {
 		global $wpdb;
-		$table = self::name();
-		// Table name is built from $wpdb->prefix plus a fixed literal; safe to interpolate.
-		$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::name() ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange
 	}
 }

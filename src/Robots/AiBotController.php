@@ -108,10 +108,10 @@ final class AiBotController {
 	}
 
 	/**
-	 * @param string|bool $public 1 if blog_public=1, 0 otherwise (WP passes as boolean-ish string).
+	 * @param string|bool $site_public 1 if blog_public=1, 0 otherwise (WP passes as boolean-ish string).
 	 */
-	public function filter_robots_txt( string $output, $public ): string {
-		if ( ! $public ) {
+	public function filter_robots_txt( string $output, $site_public ): string {
+		if ( ! $site_public ) {
 			return $output;
 		}
 

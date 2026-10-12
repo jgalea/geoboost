@@ -85,6 +85,12 @@ final class ChecksTest extends TestCase {
 		$this->assertSame( 0, ( new Checks() )->score( array() )['score'] );
 	}
 
+	public function test_score_leaves_out_checks_that_did_not_run(): void {
+		$s = ( new Checks() )->score( array( $this->check( 'access', 5, 'pass' ), $this->check( 'access', 4, 'skip' ), $this->check( 'discovery', 1, 'skip' ) ) );
+		$this->assertSame( 100, $s['score'] );
+		$this->assertNull( $s['categories']['discovery'] );
+	}
+
 	public function test_healthy_page_passes_every_check(): void {
 		$checks = ( new Checks() )->build( $this->input() );
 		$this->assertCount( 16, $checks );

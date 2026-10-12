@@ -2,6 +2,7 @@
 namespace GeoBoost\Admin\MetaBoxes;
 
 use GeoBoost\Analyzer\ContentAnalyzer;
+use GeoBoost\Analyzer\ContentRenderer;
 use GeoBoost\Analyzer\Recommendations;
 use GeoBoost\Analyzer\Scorer;
 
@@ -110,7 +111,7 @@ final class ScoreBox {
 		$signals           = ( new ContentAnalyzer() )->analyze(
 			array(
 				'title'              => $post->post_title,
-				'content_html'       => (string) apply_filters( 'the_content', $post->post_content ),
+				'content_html'       => ContentRenderer::render( (string) $post->post_content ),
 				'excerpt'            => (string) $post->post_excerpt,
 				'author_fields'      => $author_fields,
 				'has_featured'       => has_post_thumbnail( $post_id ),
